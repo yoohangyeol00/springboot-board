@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.board.backend.mapper.BoardMapper">
+
+    <resultMap id="BoardResultMap" type="com.board.backend.domain.Board">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="content" column="content"/>
+        <result property="writer" column="writer"/>
+        <result property="viewCount" column="view_count"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="save" parameterType="com.board.backend.dto.BoardCreateRequest">
+        INSERT INTO boards (
+            title,
+            content,
+            writer
+        ) VALUES (
+            #{title},
+            #{content},
+            #{writer}
+        )
+    </insert>
+
+    <select id="findAll" resultMap="BoardResultMap">
+        SELECT
+            id,
+            title,
+            content,
+            writer,
+            view_count,
+            created_at,
+            updated_at
+        FROM boards
+        ORDER BY id DESC
+    </select>
+
+    <select id="findById" parameterType="long" resultMap="BoardResultMap">
+        SELECT
+            id,
+            title,
+            content,
+            writer,
+            view_count,
+            created_at,
+            updated_at
+        FROM boards
+        WHERE id = #{id}
+    </select>
+
+    <update id="update">
+        UPDATE boards
+        SET
+            title = #{request.title},
+            content = #{request.content},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <delete id="delete" parameterType="long">
+        DELETE FROM boards
+        WHERE id = #{id}
+    </delete>
+
+    <update id="increaseViewCount" parameterType="long">
+        UPDATE boards
+        SET view_count = view_count + 1
+        WHERE id = #{id}
+    </update>
+
+</mapper>
