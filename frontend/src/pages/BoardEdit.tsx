@@ -50,8 +50,9 @@ export default function BoardEdit() {
     try {
       await boardApi.update(Number(id), form);
       navigate(`/boards/${id}`);
-    } catch {
-      alert('수정에 실패했습니다.');
+    } catch (err: any) {
+      const message = err?.response?.data?.message || '수정에 실패했습니다.';
+      alert(message);
     } finally {
       setSubmitting(false);
     }

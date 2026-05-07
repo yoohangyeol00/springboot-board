@@ -39,8 +39,9 @@ export default function BoardCreate() {
     try {
       await boardApi.create(form);
       navigate('/');
-    } catch {
-      alert('작성에 실패했습니다.');
+    } catch (err: any) {
+      const message = err?.response?.data?.message || '작성에 실패했습니다.';
+      alert(message);
     } finally {
       setSubmitting(false);
     }
