@@ -11,16 +11,17 @@ import java.util.List;
 @Mapper
 public interface BoardMapper {
 
-    void save(BoardCreateRequest request);
+    int save(BoardCreateRequest request);
 
     List<Board> findAll();
 
     Board findById(Long id);
 
-    void update(@Param("id") Long id,
-                @Param("request") BoardUpdateRequest request);
 
-    void delete(Long id);
+    int update(@Param("id") Long id,
+            @Param("request") BoardUpdateRequest request);
 
-    void increaseViewCount(Long id);
+    int delete(Long id);
+
+    int increaseViewCount(Long id);
 }
