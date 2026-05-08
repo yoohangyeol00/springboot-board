@@ -8,6 +8,7 @@ export default function BoardEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const editorRef = useRef<Editor>(null);
+  const pendingBlobs = useRef<Map<string, Blob>>(new Map());
   const [title, setTitle] = useState('');
   const [initialContent, setInitialContent] = useState('');
   const [errors, setErrors] = useState<{ title?: string; content?: string }>({});
@@ -43,7 +44,19 @@ export default function BoardEdit() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await boardApi.update(Number(id), { title, content: getContent() });
+      let content = getContent();
+
+      // 새로 추가된 이미지만 저장 시점에 업로드
+      for (const [tempUrl, blob] of pendingBlobs.current.entries()) {
+        if (content.includes(tempUrl)) {
+          const res = await boardApi.uploadImage(blob);
+          content = content.split(tempUrl).join(res.data.url);
+        }
+        URL.revokeObjectURL(tempUrl);
+      }
+      pendingBlobs.current.clear();
+
+      await boardApi.update(Number(id), { title, content });
       navigate(`/boards/${id}`);
     } catch (err: any) {
       const message = err?.response?.data?.message || '수정에 실패했습니다.';
@@ -51,6 +64,12 @@ export default function BoardEdit() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleCancel = () => {
+    pendingBlobs.current.forEach((_, url) => URL.revokeObjectURL(url));
+    pendingBlobs.current.clear();
+    navigate(`/boards/${id}`);
   };
 
   if (loading) {
@@ -98,17 +117,20 @@ export default function BoardEdit() {
               initialEditType="wysiwyg"
               hideModeSwitch
               useCommandShortcut
+              hooks={{
+                addImageBlobHook: (blob: Blob | File, callback: (url: string, alt: string) => void) => {
+                  const tempUrl = URL.createObjectURL(blob);
+                  pendingBlobs.current.set(tempUrl, blob);
+                  callback(tempUrl, '이미지');
+                },
+              }}
             />
           </div>
           {errors.content && <span className="error-message">{errors.content}</span>}
         </div>
 
         <div className="button-group">
-          <button
-            type="button"
-            className="btn btn-secondary"
-            onClick={() => navigate(`/boards/${id}`)}
-          >
+          <button type="button" className="btn btn-secondary" onClick={handleCancel}>
             취소
           </button>
           <div className="button-group-right">

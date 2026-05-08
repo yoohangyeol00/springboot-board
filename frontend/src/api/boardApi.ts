@@ -11,4 +11,9 @@ export const boardApi = {
   create: (data: BoardCreateRequest) => api.post('/boards', data),
   update: (id: number, data: BoardUpdateRequest) => api.put(`/boards/${id}`, data),
   delete: (id: number) => api.delete(`/boards/${id}`),
+  uploadImage: (blob: Blob) => {
+    const formData = new FormData();
+    formData.append('image', blob);
+    return api.post<{ url: string }>('/images', formData);
+  },
 };

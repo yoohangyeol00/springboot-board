@@ -23,6 +23,7 @@ import java.util.List;
 public class BoardServiceImpl implements BoardService {
 
     private final BoardMapper boardMapper;
+    private final ImageService imageService;
 
     @Override
     public void create(BoardCreateRequest request) {
@@ -85,6 +86,8 @@ public class BoardServiceImpl implements BoardService {
         if (board == null) {
             throw new BoardNotFoundException();
         }
+
+        imageService.deleteImages(board.getContent());
 
         int result = boardMapper.delete(id);
 
