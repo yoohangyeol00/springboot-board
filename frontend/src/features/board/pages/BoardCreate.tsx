@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Editor } from '@toast-ui/react-editor';
 import '@toast-ui/editor/dist/toastui-editor.css';
@@ -10,11 +10,20 @@ interface FormState {
 
 export default function BoardCreate() {
   const navigate = useNavigate();
+  const titleInputRef = useRef<HTMLInputElement>(null);
   const editorRef = useRef<Editor>(null);
   const pendingBlobs = useRef<Map<string, Blob>>(new Map());
   const [form, setForm] = useState<FormState>({ title: '' });
   const [errors, setErrors] = useState<Partial<FormState & { content: string }>>({});
   const [submitting, setSubmitting] = useState(false);
+
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      titleInputRef.current?.focus();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
+  }, []);
 
   const getContent = () => editorRef.current?.getInstance().getMarkdown() ?? '';
 
@@ -84,11 +93,13 @@ export default function BoardCreate() {
             제목 <span className="required">*</span>
           </label>
           <input
+            ref={titleInputRef}
             type="text"
             className={`form-input${errors.title ? ' error' : ''}`}
             value={form.title}
             onChange={handleChange}
             placeholder="제목을 입력해주세요"
+            autoFocus
           />
           {errors.title && <span className="error-message">{errors.title}</span>}
         </div>

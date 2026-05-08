@@ -15,6 +15,16 @@ public interface MemberMapper {
 
     Member findByLoginId(String loginId);
 
+    Member findByNickname(String nickname);
+
+    int updateNickname(@Param("id") Long id,
+            @Param("nickname") String nickname);
+
+    int updatePassword(@Param("id") Long id,
+            @Param("passwordHash") String passwordHash);
+
+    int withdraw(Long id);
+
     int increaseFailedLoginCount(Long id);
 
     int resetLoginFailure(Long id);

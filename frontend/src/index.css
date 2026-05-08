@@ -69,6 +69,7 @@ body {
   font-size: 14px;
   color: var(--text);
   font-weight: 600;
+  text-decoration: none;
 }
 
 .nav-link,
@@ -440,6 +441,45 @@ body {
   font-size: 14px;
   text-decoration: none;
   font-weight: 600;
+}
+
+.mypage {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.section-title {
+  font-size: 18px;
+  margin-bottom: 18px;
+}
+
+.profile-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.profile-summary div {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 14px;
+}
+
+.profile-summary dt {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+
+.profile-summary dd {
+  color: var(--text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.danger-zone {
+  border-color: rgba(220, 38, 38, 0.35);
 }
 
 .page-btn:hover:not(:disabled) {

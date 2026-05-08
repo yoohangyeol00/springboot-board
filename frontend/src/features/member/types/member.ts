@@ -19,3 +19,16 @@ export interface MemberMe {
   nickname: string;
   role: string;
 }
+
+export interface MemberUpdateRequest {
+  nickname: string;
+}
+
+export interface MemberPasswordUpdateRequest {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface MemberWithdrawRequest {
+  password: string;
+}

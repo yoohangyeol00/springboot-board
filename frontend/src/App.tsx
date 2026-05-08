@@ -6,6 +6,7 @@ import BoardCreate from './features/board/pages/BoardCreate';
 import BoardEdit from './features/board/pages/BoardEdit';
 import Login from './features/member/pages/Login';
 import Signup from './features/member/pages/Signup';
+import MyPage from './features/member/pages/MyPage';
 import { memberApi } from './features/member/api/memberApi';
 import { MemberMe } from './features/member/types/member';
 
@@ -44,7 +45,7 @@ function App() {
           <nav className="header-nav">
             {me ? (
               <>
-                <span className="header-user">{me.nickname}</span>
+                <Link to="/mypage" className="header-user">{me.nickname}</Link>
                 <button type="button" className="nav-button" onClick={handleLogout}>
                   로그아웃
                 </button>
@@ -66,6 +67,7 @@ function App() {
           <Route path="/boards/:id/edit" element={<BoardEdit />} />
           <Route path="/login" element={<Login />} />
           <Route path="/signup" element={<Signup />} />
+          <Route path="/mypage" element={<MyPage />} />
         </Routes>
       </main>
       <footer className="footer">
