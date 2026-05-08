@@ -3,14 +3,14 @@ package com.board.backend.service;
 import com.board.backend.dto.BoardCreateRequest;
 import com.board.backend.dto.BoardResponse;
 import com.board.backend.dto.BoardUpdateRequest;
+import com.board.backend.dto.PageResponse;
 
-import java.util.List;
 
 public interface BoardService {
 
     void create(BoardCreateRequest request);
 
-    List<BoardResponse> getBoards();
+    PageResponse<BoardResponse> getBoards(int page, int size);
 
     BoardResponse getBoard(Long id);
 

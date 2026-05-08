@@ -3,12 +3,14 @@ package com.board.backend.controller;
 import com.board.backend.dto.BoardCreateRequest;
 import com.board.backend.dto.BoardResponse;
 import com.board.backend.dto.BoardUpdateRequest;
+import com.board.backend.dto.PageResponse;
 import com.board.backend.service.BoardService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.List;
+
+
 
 @RestController
 @RequestMapping("/api/boards")
@@ -23,8 +25,10 @@ public class BoardController {
     }
 
     @GetMapping
-    public List<BoardResponse> getBoards() {
-        return boardService.getBoards();
+    public PageResponse<BoardResponse> getBoards(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int size) {
+        return boardService.getBoards(page, size);
     }
 
     @GetMapping("/{id}")
@@ -35,8 +39,7 @@ public class BoardController {
     @PutMapping("/{id}")
     public void updateBoard(
             @PathVariable Long id,
-            @Valid @RequestBody BoardUpdateRequest request
-    ) {
+            @Valid @RequestBody BoardUpdateRequest request) {
         boardService.updateBoard(id, request);
     }
 

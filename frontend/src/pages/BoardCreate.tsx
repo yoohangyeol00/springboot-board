@@ -1,35 +1,37 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Editor } from '@toast-ui/react-editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
 import { boardApi } from '../api/boardApi';
 
 interface FormState {
   title: string;
-  content: string;
   writer: string;
 }
 
 export default function BoardCreate() {
   const navigate = useNavigate();
-  const [form, setForm] = useState<FormState>({ title: '', content: '', writer: '' });
-  const [errors, setErrors] = useState<Partial<FormState>>({});
+  const editorRef = useRef<Editor>(null);
+  const [form, setForm] = useState<FormState>({ title: '', writer: '' });
+  const [errors, setErrors] = useState<Partial<FormState & { content: string }>>({});
   const [submitting, setSubmitting] = useState(false);
 
+  const getContent = () => editorRef.current?.getInstance().getMarkdown() ?? '';
+
   const validate = (): boolean => {
-    const newErrors: Partial<FormState> = {};
+    const newErrors: typeof errors = {};
     if (!form.title.trim()) newErrors.title = '제목을 입력해주세요.';
     if (!form.writer.trim()) newErrors.writer = '작성자를 입력해주세요.';
-    if (!form.content.trim()) newErrors.content = '내용을 입력해주세요.';
+    if (!getContent().trim()) newErrors.content = '내용을 입력해주세요.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
   const handleChange = (field: keyof FormState) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: React.ChangeEvent<HTMLInputElement>
   ) => {
     setForm(prev => ({ ...prev, [field]: e.target.value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
+    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -37,7 +39,7 @@ export default function BoardCreate() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await boardApi.create(form);
+      await boardApi.create({ ...form, content: getContent() });
       navigate('/');
     } catch (err: any) {
       const message = err?.response?.data?.message || '작성에 실패했습니다.';
@@ -86,12 +88,16 @@ export default function BoardCreate() {
           <label className="form-label">
             내용 <span className="required">*</span>
           </label>
-          <textarea
-            className={`form-textarea${errors.content ? ' error' : ''}`}
-            value={form.content}
-            onChange={handleChange('content')}
-            placeholder="내용을 입력해주세요"
-          />
+          <div className={errors.content ? 'editor-wrap editor-wrap--error' : 'editor-wrap'}>
+            <Editor
+              ref={editorRef}
+              previewStyle="vertical"
+              height="400px"
+              initialEditType="wysiwyg"
+              hideModeSwitch
+              useCommandShortcut
+            />
+          </div>
           {errors.content && <span className="error-message">{errors.content}</span>}
         </div>
 

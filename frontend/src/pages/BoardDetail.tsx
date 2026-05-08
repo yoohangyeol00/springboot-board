@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Viewer } from '@toast-ui/react-editor';
+import '@toast-ui/editor/dist/toastui-editor-viewer.css';
 import { boardApi } from '../api/boardApi';
 import { Board } from '../types/board';
 import { formatDateTime } from '../utils/dateUtils';
@@ -52,7 +54,9 @@ export default function BoardDetail() {
         </div>
       </div>
 
-      <div className="detail-content">{board.content}</div>
+      <div className="detail-content">
+        <Viewer initialValue={board.content} />
+      </div>
 
       <div className="button-group">
         <button className="btn btn-secondary" onClick={() => navigate('/')}>

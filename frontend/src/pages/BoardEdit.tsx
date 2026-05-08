@@ -1,24 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { Editor } from '@toast-ui/react-editor';
+import '@toast-ui/editor/dist/toastui-editor.css';
 import { boardApi } from '../api/boardApi';
-
-interface FormState {
-  title: string;
-  content: string;
-}
 
 export default function BoardEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const [form, setForm] = useState<FormState>({ title: '', content: '' });
-  const [errors, setErrors] = useState<Partial<FormState>>({});
+  const editorRef = useRef<Editor>(null);
+  const [title, setTitle] = useState('');
+  const [initialContent, setInitialContent] = useState('');
+  const [errors, setErrors] = useState<{ title?: string; content?: string }>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
     boardApi.getById(Number(id))
-      .then(res => setForm({ title: res.data.title, content: res.data.content }))
+      .then(res => {
+        setTitle(res.data.title);
+        setInitialContent(res.data.content);
+      })
       .catch(() => {
         alert('게시글을 찾을 수 없습니다.');
         navigate('/');
@@ -26,21 +28,14 @@ export default function BoardEdit() {
       .finally(() => setLoading(false));
   }, [id, navigate]);
 
+  const getContent = () => editorRef.current?.getInstance().getMarkdown() ?? '';
+
   const validate = (): boolean => {
-    const newErrors: Partial<FormState> = {};
-    if (!form.title.trim()) newErrors.title = '제목을 입력해주세요.';
-    if (!form.content.trim()) newErrors.content = '내용을 입력해주세요.';
+    const newErrors: typeof errors = {};
+    if (!title.trim()) newErrors.title = '제목을 입력해주세요.';
+    if (!getContent().trim()) newErrors.content = '내용을 입력해주세요.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (field: keyof FormState) => (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
-    if (errors[field]) {
-      setErrors(prev => ({ ...prev, [field]: undefined }));
-    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -48,7 +43,7 @@ export default function BoardEdit() {
     if (!validate()) return;
     setSubmitting(true);
     try {
-      await boardApi.update(Number(id), form);
+      await boardApi.update(Number(id), { title, content: getContent() });
       navigate(`/boards/${id}`);
     } catch (err: any) {
       const message = err?.response?.data?.message || '수정에 실패했습니다.';
@@ -80,8 +75,11 @@ export default function BoardEdit() {
           <input
             type="text"
             className={`form-input${errors.title ? ' error' : ''}`}
-            value={form.title}
-            onChange={handleChange('title')}
+            value={title}
+            onChange={e => {
+              setTitle(e.target.value);
+              if (errors.title) setErrors(prev => ({ ...prev, title: undefined }));
+            }}
             placeholder="제목을 입력해주세요"
           />
           {errors.title && <span className="error-message">{errors.title}</span>}
@@ -91,12 +89,17 @@ export default function BoardEdit() {
           <label className="form-label">
             내용 <span className="required">*</span>
           </label>
-          <textarea
-            className={`form-textarea${errors.content ? ' error' : ''}`}
-            value={form.content}
-            onChange={handleChange('content')}
-            placeholder="내용을 입력해주세요"
-          />
+          <div className={errors.content ? 'editor-wrap editor-wrap--error' : 'editor-wrap'}>
+            <Editor
+              ref={editorRef}
+              initialValue={initialContent}
+              previewStyle="vertical"
+              height="400px"
+              initialEditType="wysiwyg"
+              hideModeSwitch
+              useCommandShortcut
+            />
+          </div>
           {errors.content && <span className="error-message">{errors.content}</span>}
         </div>
 

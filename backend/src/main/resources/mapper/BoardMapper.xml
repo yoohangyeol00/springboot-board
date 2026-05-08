@@ -38,6 +38,13 @@
             updated_at
         FROM boards
         ORDER BY id DESC
+        LIMIT #{size}
+        OFFSET #{offset}
+    </select>
+
+    <select id="countAll" resultType="long">
+        SELECT COUNT(*)
+        FROM boards
     </select>
 
     <select id="findById" parameterType="long" resultMap="BoardResultMap">

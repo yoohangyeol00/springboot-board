@@ -21,7 +21,7 @@ function App() {
         </Routes>
       </main>
       <footer className="footer">
-        <p>© 2024 자유게시판</p>
+        <p>© 자유게시판</p>
       </footer>
     </div>
   );

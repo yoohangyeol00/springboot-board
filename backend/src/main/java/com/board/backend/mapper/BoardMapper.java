@@ -13,7 +13,12 @@ public interface BoardMapper {
 
     int save(BoardCreateRequest request);
 
-    List<Board> findAll();
+    List<Board> findAll(@Param("size") int size,
+                    @Param("offset") int offset);
+
+    long countAll();
+
+    
 
     Board findById(Long id);
 

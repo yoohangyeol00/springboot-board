@@ -8,6 +8,14 @@ export interface Board {
   updatedAt: string;
 }
 
+export interface PageResponse<T> {
+  content: T[];
+  page: number;
+  size: number;
+  totalCount: number;
+  totalPages: number;
+}
+
 export interface BoardCreateRequest {
   title: string;
   content: string;
