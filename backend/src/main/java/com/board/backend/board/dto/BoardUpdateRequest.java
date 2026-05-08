@@ -1,4 +1,4 @@
-package com.board.backend.dto;
+package com.board.backend.board.dto;
 
 import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;

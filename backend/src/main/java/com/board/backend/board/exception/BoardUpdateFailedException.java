@@ -1,4 +1,4 @@
-package com.board.backend.exception;
+package com.board.backend.board.exception;
 
 public class BoardUpdateFailedException extends RuntimeException {
     public BoardUpdateFailedException() {

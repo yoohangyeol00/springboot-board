@@ -1,4 +1,4 @@
-package com.board.backend.domain;
+package com.board.backend.board.domain;
 
 import lombok.Getter;
 import lombok.Setter;

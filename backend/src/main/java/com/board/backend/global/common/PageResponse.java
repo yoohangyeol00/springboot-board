@@ -1,4 +1,4 @@
-package com.board.backend.dto;
+package com.board.backend.global.common;
 
 import java.util.List;
 

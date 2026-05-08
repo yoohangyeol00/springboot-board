@@ -1,16 +1,13 @@
-package com.board.backend.controller;
+package com.board.backend.board.controller;
 
-import com.board.backend.dto.BoardCreateRequest;
-import com.board.backend.dto.BoardResponse;
-import com.board.backend.dto.BoardUpdateRequest;
-import com.board.backend.dto.PageResponse;
-import com.board.backend.service.BoardService;
+import com.board.backend.board.dto.BoardCreateRequest;
+import com.board.backend.board.dto.BoardResponse;
+import com.board.backend.board.dto.BoardUpdateRequest;
+import com.board.backend.board.service.BoardService;
+import com.board.backend.global.common.PageResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
-
-
-
 
 @RestController
 @RequestMapping("/api/boards")

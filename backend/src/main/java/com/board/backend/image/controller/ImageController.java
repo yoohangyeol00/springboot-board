@@ -1,6 +1,6 @@
-package com.board.backend.controller;
+package com.board.backend.image.controller;
 
-import com.board.backend.service.ImageService;
+import com.board.backend.image.service.ImageService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;

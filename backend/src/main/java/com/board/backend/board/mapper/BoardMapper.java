@@ -1,8 +1,8 @@
-package com.board.backend.mapper;
+package com.board.backend.board.mapper;
 
-import com.board.backend.domain.Board;
-import com.board.backend.dto.BoardCreateRequest;
-import com.board.backend.dto.BoardUpdateRequest;
+import com.board.backend.board.domain.Board;
+import com.board.backend.board.dto.BoardCreateRequest;
+import com.board.backend.board.dto.BoardUpdateRequest;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -18,10 +18,7 @@ public interface BoardMapper {
 
     long countAll();
 
-    
-
     Board findById(Long id);
-
 
     int update(@Param("id") Long id,
             @Param("request") BoardUpdateRequest request);

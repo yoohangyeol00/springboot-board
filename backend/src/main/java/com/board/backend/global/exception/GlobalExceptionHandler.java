@@ -1,5 +1,9 @@
-package com.board.backend.exception;
+package com.board.backend.global.exception;
 
+import com.board.backend.board.exception.BoardCreateFailedException;
+import com.board.backend.board.exception.BoardDeleteFailedException;
+import com.board.backend.board.exception.BoardNotFoundException;
+import com.board.backend.board.exception.BoardUpdateFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -25,12 +29,9 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BoardNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleBoardNotFoundException(
             BoardNotFoundException e) {
-
-        ErrorResponse response = new ErrorResponse(false, e.getMessage());
-
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
-                .body(response);
+                .body(new ErrorResponse(false, e.getMessage()));
     }
 
     @ExceptionHandler(BoardCreateFailedException.class)

@@ -1,4 +1,4 @@
-package com.board.backend.service;
+package com.board.backend.image.service;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

@@ -1,4 +1,4 @@
-package com.board.backend.exception;
+package com.board.backend.board.exception;
 
 public class BoardNotFoundException extends RuntimeException {
 

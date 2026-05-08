@@ -1,6 +1,6 @@
-package com.board.backend.dto;
+package com.board.backend.board.dto;
 
-import com.board.backend.domain.Board;
+import com.board.backend.board.domain.Board;
 import lombok.Getter;
 
 import java.time.LocalDateTime;

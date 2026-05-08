@@ -3,9 +3,9 @@
         PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
         "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
 
-<mapper namespace="com.board.backend.mapper.BoardMapper">
+<mapper namespace="com.board.backend.board.mapper.BoardMapper">
 
-    <resultMap id="BoardResultMap" type="com.board.backend.domain.Board">
+    <resultMap id="BoardResultMap" type="com.board.backend.board.domain.Board">
         <id property="id" column="id"/>
         <result property="title" column="title"/>
         <result property="content" column="content"/>
@@ -15,7 +15,7 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <insert id="save" parameterType="com.board.backend.dto.BoardCreateRequest">
+    <insert id="save" parameterType="com.board.backend.board.dto.BoardCreateRequest">
         INSERT INTO boards (
             title,
             content,

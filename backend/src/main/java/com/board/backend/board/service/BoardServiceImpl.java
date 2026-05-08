@@ -1,20 +1,18 @@
-package com.board.backend.service;
+package com.board.backend.board.service;
 
-import com.board.backend.domain.Board;
-import com.board.backend.dto.BoardCreateRequest;
-import com.board.backend.dto.BoardResponse;
-import com.board.backend.dto.BoardUpdateRequest;
-import com.board.backend.dto.PageResponse;
-import com.board.backend.mapper.BoardMapper;
+import com.board.backend.board.domain.Board;
+import com.board.backend.board.dto.BoardCreateRequest;
+import com.board.backend.board.dto.BoardResponse;
+import com.board.backend.board.dto.BoardUpdateRequest;
+import com.board.backend.board.exception.BoardCreateFailedException;
+import com.board.backend.board.exception.BoardDeleteFailedException;
+import com.board.backend.board.exception.BoardNotFoundException;
+import com.board.backend.board.exception.BoardUpdateFailedException;
+import com.board.backend.board.mapper.BoardMapper;
+import com.board.backend.global.common.PageResponse;
+import com.board.backend.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-
-import com.board.backend.exception.BoardCreateFailedException;
-import com.board.backend.exception.BoardDeleteFailedException;
-import com.board.backend.exception.BoardNotFoundException;
-import com.board.backend.exception.BoardUpdateFailedException;
-
-
 
 import java.util.List;
 
