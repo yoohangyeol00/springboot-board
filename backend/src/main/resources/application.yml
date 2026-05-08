@@ -12,6 +12,10 @@ spring:
 file:
   upload-dir: uploads
 
+jwt:
+  secret: ${JWT_SECRET:change-this-secret-key-must-be-at-least-32-bytes-long}
+  access-token-expiration: 3600000
+
 mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
   type-aliases-package: com.board.backend

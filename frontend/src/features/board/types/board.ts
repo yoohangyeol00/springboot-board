@@ -1,5 +1,6 @@
 export interface Board {
   id: number;
+  memberId: number | null;
   title: string;
   content: string;
   writer: string;
@@ -19,7 +20,6 @@ export interface PageResponse<T> {
 export interface BoardCreateRequest {
   title: string;
   content: string;
-  writer: string;
 }
 
 export interface BoardUpdateRequest {

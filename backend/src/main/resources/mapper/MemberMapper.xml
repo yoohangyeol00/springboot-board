@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.board.backend.member.mapper.MemberMapper">
+
+    <resultMap id="MemberResultMap" type="com.board.backend.member.domain.Member">
+        <id property="id" column="id"/>
+        <result property="loginId" column="login_id"/>
+        <result property="passwordHash" column="password_hash"/>
+        <result property="nickname" column="nickname"/>
+        <result property="role" column="role"/>
+        <result property="status" column="status"/>
+        <result property="failedLoginCount" column="failed_login_count"/>
+        <result property="lastLoginAt" column="last_login_at"/>
+        <result property="passwordChangedAt" column="password_changed_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+        <result property="deletedAt" column="deleted_at"/>
+    </resultMap>
+
+    <insert id="save">
+        INSERT INTO members (
+            login_id,
+            password_hash,
+            nickname
+        ) VALUES (
+            #{loginId},
+            #{passwordHash},
+            #{nickname}
+        )
+    </insert>
+
+    <select id="findById" parameterType="long" resultMap="MemberResultMap">
+        SELECT
+            id,
+            login_id,
+            password_hash,
+            nickname,
+            role,
+            status,
+            failed_login_count,
+            last_login_at,
+            password_changed_at,
+            created_at,
+            updated_at,
+            deleted_at
+        FROM members
+        WHERE id = #{id}
+          AND deleted_at IS NULL
+    </select>
+
+    <select id="findByLoginId" parameterType="string" resultMap="MemberResultMap">
+        SELECT
+            id,
+            login_id,
+            password_hash,
+            nickname,
+            role,
+            status,
+            failed_login_count,
+            last_login_at,
+            password_changed_at,
+            created_at,
+            updated_at,
+            deleted_at
+        FROM members
+        WHERE login_id = #{loginId}
+          AND deleted_at IS NULL
+    </select>
+
+    <update id="increaseFailedLoginCount" parameterType="long">
+        UPDATE members
+        SET
+            failed_login_count = failed_login_count + 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+    <update id="resetLoginFailure" parameterType="long">
+        UPDATE members
+        SET
+            failed_login_count = 0,
+            last_login_at = CURRENT_TIMESTAMP,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+    </update>
+
+</mapper>

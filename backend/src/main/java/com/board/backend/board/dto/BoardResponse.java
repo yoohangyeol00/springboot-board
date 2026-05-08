@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class BoardResponse {
 
     private final Long id;
+    private final Long memberId;
     private final String title;
     private final String content;
     private final String writer;
@@ -18,6 +19,7 @@ public class BoardResponse {
 
     public BoardResponse(Board board) {
         this.id = board.getId();
+        this.memberId = board.getMemberId();
         this.title = board.getTitle();
         this.content = board.getContent();
         this.writer = board.getWriter();

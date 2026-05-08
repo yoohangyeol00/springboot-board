@@ -17,9 +17,19 @@ export default function BoardList() {
     setLoading(true);
     boardApi.getAll(page, SIZE)
       .then(res => setPageData(res.data))
-      .catch(() => alert('게시글을 불러오는데 실패했습니다.'))
+      .catch(() => alert('게시글을 불러오지 못했습니다.'))
       .finally(() => setLoading(false));
   }, [page]);
+
+  const handleCreate = () => {
+    if (!localStorage.getItem('accessToken')) {
+      alert('로그인이 필요합니다.');
+      navigate('/login');
+      return;
+    }
+
+    navigate('/boards/new');
+  };
 
   const boards = pageData?.content ?? [];
   const totalPages = pageData?.totalPages ?? 1;
@@ -33,7 +43,7 @@ export default function BoardList() {
     <div className="container">
       <div className="page-header">
         <h1 className="page-title">자유게시판</h1>
-        <button className="btn btn-primary" onClick={() => navigate('/boards/new')}>
+        <button className="btn btn-primary" onClick={handleCreate}>
           글쓰기
         </button>
       </div>
@@ -75,16 +85,8 @@ export default function BoardList() {
 
           {totalPages > 1 && (
             <div className="pagination">
-              <button
-                className="page-btn"
-                onClick={() => setPage(1)}
-                disabled={page === 1}
-              >«</button>
-              <button
-                className="page-btn"
-                onClick={() => setPage(p => p - 1)}
-                disabled={page === 1}
-              >‹</button>
+              <button className="page-btn" onClick={() => setPage(1)} disabled={page === 1}>처음</button>
+              <button className="page-btn" onClick={() => setPage(p => p - 1)} disabled={page === 1}>이전</button>
               {pageNumbers.map(p => (
                 <button
                   key={p}
@@ -94,16 +96,8 @@ export default function BoardList() {
                   {p}
                 </button>
               ))}
-              <button
-                className="page-btn"
-                onClick={() => setPage(p => p + 1)}
-                disabled={page === totalPages}
-              >›</button>
-              <button
-                className="page-btn"
-                onClick={() => setPage(totalPages)}
-                disabled={page === totalPages}
-              >»</button>
+              <button className="page-btn" onClick={() => setPage(p => p + 1)} disabled={page === totalPages}>다음</button>
+              <button className="page-btn" onClick={() => setPage(totalPages)} disabled={page === totalPages}>끝</button>
             </div>
           )}
         </>

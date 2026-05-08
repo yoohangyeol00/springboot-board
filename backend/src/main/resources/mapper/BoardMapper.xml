@@ -7,6 +7,7 @@
 
     <resultMap id="BoardResultMap" type="com.board.backend.board.domain.Board">
         <id property="id" column="id"/>
+        <result property="memberId" column="member_id"/>
         <result property="title" column="title"/>
         <result property="content" column="content"/>
         <result property="writer" column="writer"/>
@@ -15,29 +16,33 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <insert id="save" parameterType="com.board.backend.board.dto.BoardCreateRequest">
+    <insert id="save">
         INSERT INTO boards (
             title,
             content,
-            writer
+            writer,
+            member_id
         ) VALUES (
-            #{title},
-            #{content},
-            #{writer}
+            #{request.title},
+            #{request.content},
+            (SELECT nickname FROM members WHERE id = #{memberId}),
+            #{memberId}
         )
     </insert>
 
     <select id="findAll" resultMap="BoardResultMap">
         SELECT
-            id,
-            title,
-            content,
-            writer,
-            view_count,
-            created_at,
-            updated_at
-        FROM boards
-        ORDER BY id DESC
+            b.id,
+            b.member_id,
+            b.title,
+            b.content,
+            COALESCE(m.nickname, b.writer) AS writer,
+            b.view_count,
+            b.created_at,
+            b.updated_at
+        FROM boards b
+        LEFT JOIN members m ON b.member_id = m.id
+        ORDER BY b.id DESC
         LIMIT #{size}
         OFFSET #{offset}
     </select>
@@ -49,15 +54,17 @@
 
     <select id="findById" parameterType="long" resultMap="BoardResultMap">
         SELECT
-            id,
-            title,
-            content,
-            writer,
-            view_count,
-            created_at,
-            updated_at
-        FROM boards
-        WHERE id = #{id}
+            b.id,
+            b.member_id,
+            b.title,
+            b.content,
+            COALESCE(m.nickname, b.writer) AS writer,
+            b.view_count,
+            b.created_at,
+            b.updated_at
+        FROM boards b
+        LEFT JOIN members m ON b.member_id = m.id
+        WHERE b.id = #{id}
     </select>
 
     <update id="update">

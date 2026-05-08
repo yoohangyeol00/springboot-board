@@ -12,6 +12,7 @@ import com.board.backend.board.mapper.BoardMapper;
 import com.board.backend.global.common.PageResponse;
 import com.board.backend.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -24,8 +25,8 @@ public class BoardServiceImpl implements BoardService {
     private final ImageService imageService;
 
     @Override
-    public void create(BoardCreateRequest request) {
-        int result = boardMapper.save(request);
+    public void create(BoardCreateRequest request, Long memberId) {
+        int result = boardMapper.save(request, memberId);
 
         if (result != 1) {
             throw new BoardCreateFailedException();
@@ -63,12 +64,14 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public void updateBoard(Long id, BoardUpdateRequest request) {
+    public void updateBoard(Long id, BoardUpdateRequest request, Long memberId) {
         Board board = boardMapper.findById(id);
 
         if (board == null) {
             throw new BoardNotFoundException();
         }
+
+        validateOwner(board, memberId);
 
         int result = boardMapper.update(id, request);
 
@@ -78,12 +81,14 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public void deleteBoard(Long id) {
+    public void deleteBoard(Long id, Long memberId) {
         Board board = boardMapper.findById(id);
 
         if (board == null) {
             throw new BoardNotFoundException();
         }
+
+        validateOwner(board, memberId);
 
         imageService.deleteImages(board.getContent());
 
@@ -91,6 +96,12 @@ public class BoardServiceImpl implements BoardService {
 
         if (result != 1) {
             throw new BoardDeleteFailedException();
+        }
+    }
+
+    private void validateOwner(Board board, Long memberId) {
+        if (board.getMemberId() == null || !board.getMemberId().equals(memberId)) {
+            throw new AccessDeniedException("본인이 작성한 글만 수정/삭제할 수 있습니다.");
         }
     }
 }

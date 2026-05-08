@@ -11,7 +11,8 @@ import java.util.List;
 @Mapper
 public interface BoardMapper {
 
-    int save(BoardCreateRequest request);
+    int save(@Param("request") BoardCreateRequest request,
+            @Param("memberId") Long memberId);
 
     List<Board> findAll(@Param("size") int size,
                     @Param("offset") int offset);

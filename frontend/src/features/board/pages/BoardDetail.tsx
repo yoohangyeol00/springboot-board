@@ -5,15 +5,19 @@ import '@toast-ui/editor/dist/toastui-editor-viewer.css';
 import { boardApi } from '../api/boardApi';
 import { Board } from '../types/board';
 import { formatDateTime } from '../../../shared/utils/dateUtils';
+import { memberApi } from '../../member/api/memberApi';
+import { MemberMe } from '../../member/types/member';
 
 export default function BoardDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const [board, setBoard] = useState<Board | null>(null);
+  const [me, setMe] = useState<MemberMe | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!id) return;
+
     boardApi.getById(Number(id))
       .then(res => setBoard(res.data))
       .catch(() => {
@@ -21,15 +25,25 @@ export default function BoardDetail() {
         navigate('/');
       })
       .finally(() => setLoading(false));
+
+    if (localStorage.getItem('accessToken')) {
+      memberApi.me()
+        .then(res => setMe(res.data))
+        .catch(() => {
+          localStorage.removeItem('accessToken');
+          setMe(null);
+        });
+    }
   }, [id, navigate]);
 
   const handleDelete = async () => {
     if (!window.confirm('정말 삭제하시겠습니까?')) return;
+
     try {
       await boardApi.delete(Number(id));
       navigate('/');
-    } catch {
-      alert('삭제에 실패했습니다.');
+    } catch (err: any) {
+      alert(err?.response?.data?.message || '삭제에 실패했습니다.');
     }
   };
 
@@ -43,14 +57,16 @@ export default function BoardDetail() {
 
   if (!board) return null;
 
+  const isOwner = me != null && board.memberId === me.id;
+
   return (
     <div className="container">
       <div className="detail-header">
         <h1 className="detail-title">{board.title}</h1>
         <div className="detail-meta">
-          <span>작성자: <strong>{board.writer}</strong></span>
-          <span>작성일: {formatDateTime(board.createdAt)}</span>
-          <span>조회수: {board.viewCount}</span>
+          <span>작성자 <strong>{board.writer}</strong></span>
+          <span>작성일 {formatDateTime(board.createdAt)}</span>
+          <span>조회수 {board.viewCount}</span>
         </div>
       </div>
 
@@ -62,14 +78,16 @@ export default function BoardDetail() {
         <button className="btn btn-secondary" onClick={() => navigate('/')}>
           목록
         </button>
-        <div className="button-group-right">
-          <button className="btn btn-primary" onClick={() => navigate(`/boards/${id}/edit`)}>
-            수정
-          </button>
-          <button className="btn btn-danger" onClick={handleDelete}>
-            삭제
-          </button>
-        </div>
+        {isOwner && (
+          <div className="button-group-right">
+            <button className="btn btn-primary" onClick={() => navigate(`/boards/${id}/edit`)}>
+              수정
+            </button>
+            <button className="btn btn-danger" onClick={handleDelete}>
+              삭제
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

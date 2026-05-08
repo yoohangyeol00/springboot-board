@@ -5,8 +5,10 @@ import com.board.backend.board.dto.BoardResponse;
 import com.board.backend.board.dto.BoardUpdateRequest;
 import com.board.backend.board.service.BoardService;
 import com.board.backend.global.common.PageResponse;
+import com.board.backend.global.security.LoginMember;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -17,8 +19,10 @@ public class BoardController {
     private final BoardService boardService;
 
     @PostMapping
-    public void create(@Valid @RequestBody BoardCreateRequest request) {
-        boardService.create(request);
+    public void create(
+            @Valid @RequestBody BoardCreateRequest request,
+            @AuthenticationPrincipal LoginMember loginMember) {
+        boardService.create(request, loginMember.getId());
     }
 
     @GetMapping
@@ -36,12 +40,15 @@ public class BoardController {
     @PutMapping("/{id}")
     public void updateBoard(
             @PathVariable Long id,
-            @Valid @RequestBody BoardUpdateRequest request) {
-        boardService.updateBoard(id, request);
+            @Valid @RequestBody BoardUpdateRequest request,
+            @AuthenticationPrincipal LoginMember loginMember) {
+        boardService.updateBoard(id, request, loginMember.getId());
     }
 
     @DeleteMapping("/{id}")
-    public void deleteBoard(@PathVariable Long id) {
-        boardService.deleteBoard(id);
+    public void deleteBoard(
+            @PathVariable Long id,
+            @AuthenticationPrincipal LoginMember loginMember) {
+        boardService.deleteBoard(id, loginMember.getId());
     }
 }

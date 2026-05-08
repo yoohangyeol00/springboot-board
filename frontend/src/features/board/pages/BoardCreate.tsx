@@ -6,14 +6,13 @@ import { boardApi } from '../api/boardApi';
 
 interface FormState {
   title: string;
-  writer: string;
 }
 
 export default function BoardCreate() {
   const navigate = useNavigate();
   const editorRef = useRef<Editor>(null);
   const pendingBlobs = useRef<Map<string, Blob>>(new Map());
-  const [form, setForm] = useState<FormState>({ title: '', writer: '' });
+  const [form, setForm] = useState<FormState>({ title: '' });
   const [errors, setErrors] = useState<Partial<FormState & { content: string }>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -22,23 +21,21 @@ export default function BoardCreate() {
   const validate = (): boolean => {
     const newErrors: typeof errors = {};
     if (!form.title.trim()) newErrors.title = '제목을 입력해주세요.';
-    if (!form.writer.trim()) newErrors.writer = '작성자를 입력해주세요.';
     if (!getContent().trim()) newErrors.content = '내용을 입력해주세요.';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleChange = (field: keyof FormState) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setForm(prev => ({ ...prev, [field]: e.target.value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: undefined }));
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm(prev => ({ ...prev, title: e.target.value }));
+    if (errors.title) setErrors(prev => ({ ...prev, title: undefined }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
     setSubmitting(true);
+
     try {
       let content = getContent();
 
@@ -51,10 +48,18 @@ export default function BoardCreate() {
       }
       pendingBlobs.current.clear();
 
-      await boardApi.create({ ...form, content });
+      await boardApi.create({ title: form.title, content });
       navigate('/');
     } catch (err: any) {
-      const message = err?.response?.data?.message || '작성에 실패했습니다.';
+      const status = err?.response?.status;
+      const message = err?.response?.data?.message || '게시글 작성에 실패했습니다.';
+
+      if (status === 401 || status === 403) {
+        alert('로그인이 필요합니다.');
+        navigate('/login');
+        return;
+      }
+
       alert(message);
     } finally {
       setSubmitting(false);
@@ -82,24 +87,10 @@ export default function BoardCreate() {
             type="text"
             className={`form-input${errors.title ? ' error' : ''}`}
             value={form.title}
-            onChange={handleChange('title')}
+            onChange={handleChange}
             placeholder="제목을 입력해주세요"
           />
           {errors.title && <span className="error-message">{errors.title}</span>}
-        </div>
-
-        <div className="form-group">
-          <label className="form-label">
-            작성자 <span className="required">*</span>
-          </label>
-          <input
-            type="text"
-            className={`form-input${errors.writer ? ' error' : ''}`}
-            value={form.writer}
-            onChange={handleChange('writer')}
-            placeholder="작성자명을 입력해주세요"
-          />
-          {errors.writer && <span className="error-message">{errors.writer}</span>}
         </div>
 
         <div className="form-group">

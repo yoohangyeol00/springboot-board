@@ -35,22 +35,14 @@ public class ImageService {
     }
 
     public void deleteImages(String content) {
-        if (content == null || content.isBlank()) {
-            log.info("[ImageDelete] content가 비어있어 건너뜁니다.");
-            return;
-        }
-
-        log.info("[ImageDelete] content:\n{}", content);
+        if (content == null || !content.contains("/uploads/")) return;
 
         Path uploadPath = Paths.get(uploadDir).toAbsolutePath();
         Pattern pattern = Pattern.compile("/uploads/[^\\s\"')\\]]+");
         Matcher matcher = pattern.matcher(content);
 
-        boolean found = false;
         while (matcher.find()) {
-            found = true;
-            String matched = matcher.group();
-            String filename = matched.substring("/uploads/".length());
+            String filename = matcher.group().substring("/uploads/".length());
             Path filePath = uploadPath.resolve(filename);
             log.info("[ImageDelete] 삭제 시도: {}", filePath);
             try {
@@ -59,10 +51,6 @@ public class ImageService {
             } catch (IOException e) {
                 log.error("[ImageDelete] 삭제 실패: {}", filePath, e);
             }
-        }
-
-        if (!found) {
-            log.info("[ImageDelete] content에서 /uploads/ URL을 찾지 못했습니다.");
         }
     }
 

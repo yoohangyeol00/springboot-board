@@ -7,13 +7,13 @@ import com.board.backend.global.common.PageResponse;
 
 public interface BoardService {
 
-    void create(BoardCreateRequest request);
+    void create(BoardCreateRequest request, Long memberId);
 
     PageResponse<BoardResponse> getBoards(int page, int size);
 
     BoardResponse getBoard(Long id);
 
-    void updateBoard(Long id, BoardUpdateRequest request);
+    void updateBoard(Long id, BoardUpdateRequest request, Long memberId);
 
-    void deleteBoard(Long id);
+    void deleteBoard(Long id, Long memberId);
 }

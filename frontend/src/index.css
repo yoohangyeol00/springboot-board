@@ -48,6 +48,7 @@ body {
   height: 100%;
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
 .logo {
@@ -56,6 +57,35 @@ body {
   color: var(--primary);
   text-decoration: none;
   letter-spacing: -0.3px;
+}
+
+.header-nav {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-user {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: 600;
+}
+
+.nav-link,
+.nav-button {
+  color: var(--text-secondary);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.nav-link:hover,
+.nav-button:hover {
+  color: var(--primary);
 }
 
 .main {
@@ -367,6 +397,7 @@ body {
   align-items: center;
   justify-content: center;
   width: 36px;
+  min-width: 36px;
   height: 36px;
   border-radius: 6px;
   border: 1px solid var(--border);
@@ -375,6 +406,40 @@ body {
   font-size: 14px;
   cursor: pointer;
   transition: all 0.15s;
+}
+
+.auth-container {
+  max-width: 420px;
+  margin: 0 auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 32px;
+}
+
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.auth-title {
+  font-size: 22px;
+  margin-bottom: 12px;
+}
+
+.auth-submit {
+  margin-top: 10px;
+  width: 100%;
+}
+
+.auth-link {
+  align-self: center;
+  margin-top: 8px;
+  color: var(--primary);
+  font-size: 14px;
+  text-decoration: none;
+  font-weight: 600;
 }
 
 .page-btn:hover:not(:disabled) {
