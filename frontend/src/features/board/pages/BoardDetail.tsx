@@ -4,7 +4,7 @@ import { Viewer } from '@toast-ui/react-editor';
 import '@toast-ui/editor/dist/toastui-editor-viewer.css';
 import { boardApi } from '../api/boardApi';
 import { Board } from '../types/board';
-import { formatDateTime } from '../utils/dateUtils';
+import { formatDateTime } from '../../../shared/utils/dateUtils';
 
 export default function BoardDetail() {
   const { id } = useParams<{ id: string }>();

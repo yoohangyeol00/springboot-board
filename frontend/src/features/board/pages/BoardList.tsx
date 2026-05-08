@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { boardApi } from '../api/boardApi';
 import { Board, PageResponse } from '../types/board';
-import { formatDate } from '../utils/dateUtils';
+import { formatDate } from '../../../shared/utils/dateUtils';
 
 const SIZE = 10;
 const PAGE_GROUP = 10;

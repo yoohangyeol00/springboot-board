@@ -1,8 +1,8 @@
 import { Routes, Route, Link } from 'react-router-dom';
-import BoardList from './pages/BoardList';
-import BoardDetail from './pages/BoardDetail';
-import BoardCreate from './pages/BoardCreate';
-import BoardEdit from './pages/BoardEdit';
+import BoardList from './features/board/pages/BoardList';
+import BoardDetail from './features/board/pages/BoardDetail';
+import BoardCreate from './features/board/pages/BoardCreate';
+import BoardEdit from './features/board/pages/BoardEdit';
 
 function App() {
   return (

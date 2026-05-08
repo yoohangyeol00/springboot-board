@@ -46,7 +46,6 @@ export default function BoardEdit() {
     try {
       let content = getContent();
 
-      // 새로 추가된 이미지만 저장 시점에 업로드
       for (const [tempUrl, blob] of pendingBlobs.current.entries()) {
         if (content.includes(tempUrl)) {
           const res = await boardApi.uploadImage(blob);

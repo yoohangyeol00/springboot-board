@@ -42,7 +42,6 @@ export default function BoardCreate() {
     try {
       let content = getContent();
 
-      // 저장 시점에 blob URL → 서버 URL로 업로드 및 교체
       for (const [tempUrl, blob] of pendingBlobs.current.entries()) {
         if (content.includes(tempUrl)) {
           const res = await boardApi.uploadImage(blob);
@@ -63,7 +62,6 @@ export default function BoardCreate() {
   };
 
   const handleCancel = () => {
-    // 취소 시 blob URL만 해제 (서버엔 아무것도 업로드 안 됐으므로 정리 불필요)
     pendingBlobs.current.forEach((_, url) => URL.revokeObjectURL(url));
     pendingBlobs.current.clear();
     navigate('/');
