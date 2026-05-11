@@ -39,18 +39,20 @@ public class CommentController {
         return commentService.getComments(boardId);
     }
 
-    @PutMapping("/comments/{id}")
+    @PutMapping("/boards/{boardId}/comments/{commentId}")
     public void update(
-            @PathVariable Long id,
+            @PathVariable Long boardId,
+            @PathVariable Long commentId,
             @Valid @RequestBody CommentUpdateRequest request,
             @AuthenticationPrincipal LoginMember loginMember) {
-        commentService.update(id, request, loginMember.getId());
+        commentService.update(boardId, commentId, request, loginMember.getId());
     }
 
-    @DeleteMapping("/comments/{id}")
+    @DeleteMapping("/boards/{boardId}/comments/{commentId}")
     public void delete(
-            @PathVariable Long id,
+            @PathVariable Long boardId,
+            @PathVariable Long commentId,
             @AuthenticationPrincipal LoginMember loginMember) {
-        commentService.delete(id, loginMember.getId());
+        commentService.delete(boardId, commentId, loginMember.getId());
     }
 }

@@ -140,6 +140,8 @@ public class BoardServiceImpl implements BoardService { ... }
 
 ## 4. DB 설계
 
+![alt text](erd.png)
+
 ### ERD (관계 요약)
 
 ```
@@ -213,8 +215,8 @@ CREATE INDEX idx_comments_board_parent_created
 
 ### 핵심 설계 결정
 
-**writer 컬럼 (스냅샷 패턴)**  
-`boards.writer`는 작성 당시 닉네임을 저장합니다. 사용자가 나중에 닉네임을 바꿔도 게시글의 원래 작성자명이 유지됩니다.
+**writer 컬럼 (탈퇴 회원 폴백)**  
+조회 시 `COALESCE(m.nickname, b.writer)`로 현재 닉네임을 우선 표시합니다. 닉네임을 변경하면 기존 게시글에도 변경된 닉네임이 반영됩니다. `b.writer`(작성 당시 스냅샷)는 회원 탈퇴로 members 레코드가 없을 때만 폴백으로 사용됩니다.
 
 **소프트 삭제 vs 하드 삭제**
 - 댓글: `deleted_at` 타임스탬프로 소프트 삭제 → "삭제된 댓글입니다." 표시, 스레드 구조 유지
@@ -479,8 +481,8 @@ BoardCreateFailedException      → 500 (DB 오류)
 |--------|-----|------|------|
 | POST | `/api/boards/{boardId}/comments` | O | 댓글/대댓글 작성 |
 | GET | `/api/boards/{boardId}/comments` | X | 댓글 목록 조회 |
-| PUT | `/comments/{id}` | O | 댓글 수정 |
-| DELETE | `/comments/{id}` | O | 댓글 소프트 삭제 |
+| PUT | `/api/boards/{boardId}/comments/{commentId}` | O | 댓글 수정 |
+| DELETE | `/api/boards/{boardId}/comments/{commentId}` | O | 댓글 소프트 삭제 |
 
 ### 이미지
 
@@ -534,7 +536,7 @@ axiosInstance.interceptors.request.use((config) => {
 | 로그아웃 시 DB 폐기 | Refresh Token을 서버에서 즉시 무효화 → 강제 로그아웃 가능 |
 | MyBatis 사용 (JPA 미사용) | 복잡한 쿼리(페이징, 조회수 증가) 직접 제어 가능 |
 | 소프트 삭제 (댓글) | 대댓글 스레드 구조 유지, 데이터 복구 가능 |
-| writer 스냅샷 저장 | 닉네임 변경 후에도 원본 작성자명 표시 |
+| writer 스냅샷 저장 | 회원 탈퇴 시 닉네임 폴백용 (평소에는 JOIN으로 현재 닉네임 표시) |
 | 도메인별 패키지 분리 | 각 기능이 독립적 → 변경 영향 범위 최소화 |
 | 인터페이스 + 구현체 분리 | 테스트 용이성, 구현체 교체 가능 |
 | 이미지 UUID 파일명 | 파일명 충돌 방지, 원본 파일명 노출 방지 |

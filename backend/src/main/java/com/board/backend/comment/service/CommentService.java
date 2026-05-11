@@ -12,7 +12,7 @@ public interface CommentService {
 
     List<CommentResponse> getComments(Long boardId);
 
-    void update(Long id, CommentUpdateRequest request, Long memberId);
+    void update(Long boardId, Long commentId, CommentUpdateRequest request, Long memberId);
 
-    void delete(Long id, Long memberId);
+    void delete(Long boardId, Long commentId, Long memberId);
 }

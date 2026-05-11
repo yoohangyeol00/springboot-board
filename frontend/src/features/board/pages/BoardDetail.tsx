@@ -157,7 +157,7 @@ export default function BoardDetail() {
 
     try {
       setSubmitting(true);
-      await commentApi.update(commentId, { content: editingContent.trim() });
+      await commentApi.update(boardId, commentId, { content: editingContent.trim() });
       cancelEdit();
       await loadComments();
     } catch (err: any) {
@@ -171,7 +171,7 @@ export default function BoardDetail() {
     if (!window.confirm('댓글을 삭제하시겠습니까?')) return;
 
     try {
-      await commentApi.delete(commentId);
+      await commentApi.delete(boardId, commentId);
       await loadComments();
     } catch (err: any) {
       alert(err?.response?.data?.message || '댓글 삭제에 실패했습니다.');

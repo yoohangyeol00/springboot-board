@@ -52,12 +52,13 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public void update(Long id, CommentUpdateRequest request, Long memberId) {
-        Comment comment = getExistingComment(id);
+    public void update(Long boardId, Long commentId, CommentUpdateRequest request, Long memberId) {
+        Comment comment = getExistingComment(commentId);
+        validateCommentBelongsToBoard(comment, boardId);
         validateOwner(comment, memberId);
         validateNotDeleted(comment);
 
-        int result = commentMapper.update(id, request);
+        int result = commentMapper.update(commentId, request);
 
         if (result != 1) {
             throw new CommentUpdateFailedException();
@@ -65,12 +66,13 @@ public class CommentServiceImpl implements CommentService {
     }
 
     @Override
-    public void delete(Long id, Long memberId) {
-        Comment comment = getExistingComment(id);
+    public void delete(Long boardId, Long commentId, Long memberId) {
+        Comment comment = getExistingComment(commentId);
+        validateCommentBelongsToBoard(comment, boardId);
         validateOwner(comment, memberId);
         validateNotDeleted(comment);
 
-        int result = commentMapper.softDelete(id);
+        int result = commentMapper.softDelete(commentId);
 
         if (result != 1) {
             throw new CommentDeleteFailedException();
@@ -101,6 +103,12 @@ public class CommentServiceImpl implements CommentService {
         }
 
         return comment;
+    }
+
+    private void validateCommentBelongsToBoard(Comment comment, Long boardId) {
+        if (!comment.getBoardId().equals(boardId)) {
+            throw new CommentNotFoundException();
+        }
     }
 
     private void validateOwner(Comment comment, Long memberId) {
