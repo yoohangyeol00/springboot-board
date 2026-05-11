@@ -1,0 +1,42 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: board-postgres
+    environment:
+      POSTGRES_DB: board_db
+      POSTGRES_USER: board_user
+      POSTGRES_PASSWORD: board_pass
+    ports:
+      - "5432:5432"
+    volumes:
+      - board_pg_data:/var/lib/postgresql/data
+    networks:
+      - board-network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: board-backend
+    depends_on:
+      - postgres
+    ports:
+      - "8080:8080"
+    networks:
+      - board-network
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: board-frontend
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - board-network
+
+volumes:
+  board_pg_data:
+
+networks:
+  board-network:
