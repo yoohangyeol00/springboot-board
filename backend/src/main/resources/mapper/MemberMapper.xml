@@ -113,6 +113,8 @@
     <update id="withdraw" parameterType="long">
         UPDATE members
         SET
+            login_id = CONCAT('withdrawn_', id, '_', LEFT(MD5(login_id), 8)),
+            nickname = CONCAT('withdrawn_', id, '_', LEFT(MD5(nickname), 8)),
             status = 'WITHDRAWN',
             deleted_at = CURRENT_TIMESTAMP,
             updated_at = CURRENT_TIMESTAMP

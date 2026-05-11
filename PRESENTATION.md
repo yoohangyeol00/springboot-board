@@ -35,7 +35,7 @@
 ### 구현된 기능 요약
 
 - **회원**: 가입 / 로그인 / 내 정보 조회 / 닉네임 수정 / 비밀번호 변경 / 탈퇴
-- **게시글**: 목록(페이징) / 상세 조회(조회수++) / 작성 / 수정 / 삭제
+- **게시글**: 목록(페이징) / 검색(제목·내용·작성자·전체) / 인기글 / 상세 조회(조회수++) / 작성 / 수정 / 삭제
 - **댓글**: 작성 / 수정 / 소프트 삭제 / 대댓글(1단계)
 - **이미지**: 업로드 / 자동 삭제(게시글 삭제 시)
 
@@ -385,6 +385,53 @@ ORDER BY created_at DESC
 LIMIT #{size} OFFSET #{offset}   -- offset = (page-1) * size
 ```
 
+**검색 (MyBatis 동적 SQL)**
+
+`searchType` 파라미터로 검색 대상을 선택하고, `keyword`로 검색합니다.
+
+```
+GET /api/boards?searchType=title&keyword=스프링
+GET /api/boards?searchType=content&keyword=jwt
+GET /api/boards?searchType=writer&keyword=홍길동
+GET /api/boards?searchType=all&keyword=게시판   ← 기본값 (제목+내용+작성자 모두 검색)
+```
+
+MyBatis `<choose>/<when>/<otherwise>`로 searchType에 따라 WHERE 절을 동적으로 생성합니다.  
+PostgreSQL의 `ILIKE`를 사용해 대소문자를 구분하지 않고 검색합니다.
+
+```xml
+<where>
+  <if test="keyword != null and keyword != ''">
+    <choose>
+      <when test="searchType == 'title'">
+        b.title ILIKE CONCAT('%', #{keyword}, '%')
+      </when>
+      <when test="searchType == 'writer'">
+        COALESCE(m.nickname, b.writer) ILIKE CONCAT('%', #{keyword}, '%')
+      </when>
+      <otherwise>   <!-- all: 제목 OR 내용 OR 작성자 -->
+        (b.title ILIKE ... OR b.content ILIKE ... OR COALESCE(m.nickname, b.writer) ILIKE ...)
+      </otherwise>
+    </choose>
+  </if>
+</where>
+```
+
+keyword가 빈 문자열이면 `<where>` 절이 통째로 생략되어 전체 목록을 반환합니다.
+
+**인기글**
+
+```
+GET /api/boards/popular?limit=5
+```
+
+조회수 내림차순, 동점이면 최신순으로 상위 N개를 반환합니다.
+
+```sql
+ORDER BY b.view_count DESC, b.id DESC
+LIMIT #{limit}
+```
+
 **조회수 증가**  
 상세 조회 시 `UPDATE boards SET view_count = view_count + 1` 실행.
 
@@ -470,7 +517,8 @@ BoardCreateFailedException      → 500 (DB 오류)
 | Method | URL | 인증 | 설명 |
 |--------|-----|------|------|
 | POST | `/api/boards` | O | 게시글 작성 |
-| GET | `/api/boards?page=1&size=10` | X | 목록 조회 (페이징) |
+| GET | `/api/boards?page=1&size=10&searchType=all&keyword=` | X | 목록 조회 (페이징 + 검색) |
+| GET | `/api/boards/popular?limit=5` | X | 인기글 조회 (조회수 상위 N개) |
 | GET | `/api/boards/{id}` | X | 상세 조회 + 조회수++ |
 | PUT | `/api/boards/{id}` | O | 수정 (작성자만) |
 | DELETE | `/api/boards/{id}` | O | 삭제 (작성자만) |

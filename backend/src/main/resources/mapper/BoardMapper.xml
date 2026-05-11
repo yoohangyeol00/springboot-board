@@ -42,6 +42,28 @@
             b.updated_at
         FROM boards b
         LEFT JOIN members m ON b.member_id = m.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'title'">
+                        b.title ILIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'content'">
+                        b.content ILIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'writer'">
+                        COALESCE(m.nickname, b.writer) ILIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <otherwise>
+                        (
+                            b.title ILIKE CONCAT('%', #{keyword}, '%')
+                            OR b.content ILIKE CONCAT('%', #{keyword}, '%')
+                            OR COALESCE(m.nickname, b.writer) ILIKE CONCAT('%', #{keyword}, '%')
+                        )
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
         ORDER BY b.id DESC
         LIMIT #{size}
         OFFSET #{offset}
@@ -49,7 +71,46 @@
 
     <select id="countAll" resultType="long">
         SELECT COUNT(*)
-        FROM boards
+        FROM boards b
+        LEFT JOIN members m ON b.member_id = m.id
+        <where>
+            <if test="keyword != null and keyword != ''">
+                <choose>
+                    <when test="searchType == 'title'">
+                        b.title ILIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'content'">
+                        b.content ILIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <when test="searchType == 'writer'">
+                        COALESCE(m.nickname, b.writer) ILIKE CONCAT('%', #{keyword}, '%')
+                    </when>
+                    <otherwise>
+                        (
+                            b.title ILIKE CONCAT('%', #{keyword}, '%')
+                            OR b.content ILIKE CONCAT('%', #{keyword}, '%')
+                            OR COALESCE(m.nickname, b.writer) ILIKE CONCAT('%', #{keyword}, '%')
+                        )
+                    </otherwise>
+                </choose>
+            </if>
+        </where>
+    </select>
+
+    <select id="findPopular" resultMap="BoardResultMap">
+        SELECT
+            b.id,
+            b.member_id,
+            b.title,
+            b.content,
+            COALESCE(m.nickname, b.writer) AS writer,
+            b.view_count,
+            b.created_at,
+            b.updated_at
+        FROM boards b
+        LEFT JOIN members m ON b.member_id = m.id
+        ORDER BY b.view_count DESC, b.id DESC
+        LIMIT #{limit}
     </select>
 
     <select id="findById" parameterType="long" resultMap="BoardResultMap">
@@ -67,6 +128,21 @@
         WHERE b.id = #{id}
     </select>
 
+    <select id="findByMemberId" parameterType="long" resultMap="BoardResultMap">
+        SELECT
+            b.id,
+            b.member_id,
+            b.title,
+            b.content,
+            COALESCE(m.nickname, b.writer) AS writer,
+            b.view_count,
+            b.created_at,
+            b.updated_at
+        FROM boards b
+        LEFT JOIN members m ON b.member_id = m.id
+        WHERE b.member_id = #{memberId}
+    </select>
+
     <update id="update">
         UPDATE boards
         SET
@@ -79,6 +155,11 @@
     <delete id="delete" parameterType="long">
         DELETE FROM boards
         WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteByMemberId" parameterType="long">
+        DELETE FROM boards
+        WHERE member_id = #{memberId}
     </delete>
 
     <update id="increaseViewCount" parameterType="long">

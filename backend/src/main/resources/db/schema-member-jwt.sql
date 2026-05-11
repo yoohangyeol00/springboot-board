@@ -1,8 +1,8 @@
 CREATE TABLE members (
     id BIGSERIAL PRIMARY KEY,
-    login_id VARCHAR(50) NOT NULL UNIQUE,
+    login_id VARCHAR(50) NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    nickname VARCHAR(50) NOT NULL UNIQUE,
+    nickname VARCHAR(50) NOT NULL,
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
     failed_login_count INT NOT NULL DEFAULT 0,
@@ -12,6 +12,14 @@ CREATE TABLE members (
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at TIMESTAMP NULL
 );
+
+CREATE UNIQUE INDEX uq_members_active_login_id
+    ON members(login_id)
+    WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX uq_members_active_nickname
+    ON members(nickname)
+    WHERE deleted_at IS NULL;
 
 CREATE TABLE member_audit_logs (
     id BIGSERIAL PRIMARY KEY,

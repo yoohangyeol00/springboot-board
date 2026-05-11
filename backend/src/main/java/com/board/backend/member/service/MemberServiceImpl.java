@@ -1,22 +1,26 @@
 package com.board.backend.member.service;
 
+import com.board.backend.board.domain.Board;
+import com.board.backend.board.mapper.BoardMapper;
 import com.board.backend.global.security.JwtTokenProvider;
 import com.board.backend.global.security.TokenHashUtil;
+import com.board.backend.image.service.ImageService;
 import com.board.backend.member.domain.Member;
 import com.board.backend.member.domain.RefreshToken;
 import com.board.backend.member.dto.MemberLoginRequest;
 import com.board.backend.member.dto.MemberLoginResponse;
 import com.board.backend.member.dto.MemberMeResponse;
 import com.board.backend.member.dto.MemberPasswordUpdateRequest;
-import com.board.backend.member.dto.RefreshTokenRequest;
 import com.board.backend.member.dto.MemberSignupRequest;
 import com.board.backend.member.dto.MemberUpdateRequest;
 import com.board.backend.member.dto.MemberWithdrawRequest;
+import com.board.backend.member.dto.RefreshTokenRequest;
 import com.board.backend.member.mapper.MemberMapper;
 import com.board.backend.member.mapper.RefreshTokenMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
@@ -28,6 +32,8 @@ public class MemberServiceImpl implements MemberService {
 
     private final MemberMapper memberMapper;
     private final RefreshTokenMapper refreshTokenMapper;
+    private final BoardMapper boardMapper;
+    private final ImageService imageService;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -103,21 +109,6 @@ public class MemberServiceImpl implements MemberService {
         refreshTokenMapper.revokeByTokenHash(TokenHashUtil.sha256(refreshToken));
     }
 
-    private MemberLoginResponse issueTokens(Member member) {
-        String accessToken = jwtTokenProvider.createAccessToken(
-                member.getId(),
-                member.getLoginId(),
-                member.getRole());
-        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
-
-        refreshTokenMapper.save(
-                member.getId(),
-                TokenHashUtil.sha256(refreshToken),
-                jwtTokenProvider.getRefreshTokenExpiresAt());
-
-        return new MemberLoginResponse(accessToken, refreshToken);
-    }
-
     @Override
     public MemberMeResponse getMe(Long memberId) {
         return new MemberMeResponse(getActiveMember(memberId));
@@ -156,6 +147,7 @@ public class MemberServiceImpl implements MemberService {
     }
 
     @Override
+    @Transactional
     public void withdraw(Long memberId, MemberWithdrawRequest request) {
         Member member = getActiveMember(memberId);
 
@@ -163,11 +155,37 @@ public class MemberServiceImpl implements MemberService {
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
+        deleteMemberBoards(memberId);
+        refreshTokenMapper.revokeAllByMemberId(memberId);
+
         int result = memberMapper.withdraw(memberId);
 
         if (result != 1) {
             throw new IllegalStateException("회원 탈퇴에 실패했습니다.");
         }
+    }
+
+    private MemberLoginResponse issueTokens(Member member) {
+        String accessToken = jwtTokenProvider.createAccessToken(
+                member.getId(),
+                member.getLoginId(),
+                member.getRole());
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
+
+        refreshTokenMapper.save(
+                member.getId(),
+                TokenHashUtil.sha256(refreshToken),
+                jwtTokenProvider.getRefreshTokenExpiresAt());
+
+        return new MemberLoginResponse(accessToken, refreshToken);
+    }
+
+    private void deleteMemberBoards(Long memberId) {
+        for (Board board : boardMapper.findByMemberId(memberId)) {
+            imageService.deleteImages(board.getContent());
+        }
+
+        boardMapper.deleteByMemberId(memberId);
     }
 
     private Member getActiveMember(Long memberId) {

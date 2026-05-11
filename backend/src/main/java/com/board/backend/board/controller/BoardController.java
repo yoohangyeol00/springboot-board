@@ -11,6 +11,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/boards")
 @RequiredArgsConstructor
@@ -28,8 +30,16 @@ public class BoardController {
     @GetMapping
     public PageResponse<BoardResponse> getBoards(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int size) {
-        return boardService.getBoards(page, size);
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "all") String searchType,
+            @RequestParam(defaultValue = "") String keyword) {
+        return boardService.getBoards(page, size, searchType, keyword);
+    }
+
+    @GetMapping("/popular")
+    public List<BoardResponse> getPopularBoards(
+            @RequestParam(defaultValue = "5") int limit) {
+        return boardService.getPopularBoards(limit);
     }
 
     @GetMapping("/{id}")

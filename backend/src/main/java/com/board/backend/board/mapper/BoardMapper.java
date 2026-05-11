@@ -15,9 +15,16 @@ public interface BoardMapper {
             @Param("memberId") Long memberId);
 
     List<Board> findAll(@Param("size") int size,
-                    @Param("offset") int offset);
+                    @Param("offset") int offset,
+                    @Param("searchType") String searchType,
+                    @Param("keyword") String keyword);
 
-    long countAll();
+    long countAll(@Param("searchType") String searchType,
+            @Param("keyword") String keyword);
+
+    List<Board> findPopular(@Param("limit") int limit);
+
+    List<Board> findByMemberId(Long memberId);
 
     Board findById(Long id);
 
@@ -25,6 +32,8 @@ public interface BoardMapper {
             @Param("request") BoardUpdateRequest request);
 
     int delete(Long id);
+
+    int deleteByMemberId(Long memberId);
 
     int increaseViewCount(Long id);
 }

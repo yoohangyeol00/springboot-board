@@ -34,18 +34,29 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
-    public PageResponse<BoardResponse> getBoards(int page, int size) {
-
+    public PageResponse<BoardResponse> getBoards(int page, int size, String searchType, String keyword) {
         int offset = (page - 1) * size;
+        String normalizedSearchType = normalizeSearchType(searchType);
+        String normalizedKeyword = normalizeKeyword(keyword);
 
-        List<BoardResponse> boards = boardMapper.findAll(size, offset)
+        List<BoardResponse> boards = boardMapper.findAll(size, offset, normalizedSearchType, normalizedKeyword)
                 .stream()
                 .map(BoardResponse::new)
                 .toList();
 
-        long totalCount = boardMapper.countAll();
+        long totalCount = boardMapper.countAll(normalizedSearchType, normalizedKeyword);
 
         return new PageResponse<>(boards, page, size, totalCount);
+    }
+
+    @Override
+    public List<BoardResponse> getPopularBoards(int limit) {
+        int normalizedLimit = Math.max(1, Math.min(limit, 10));
+
+        return boardMapper.findPopular(normalizedLimit)
+                .stream()
+                .map(BoardResponse::new)
+                .toList();
     }
 
     @Override
@@ -103,5 +114,24 @@ public class BoardServiceImpl implements BoardService {
         if (board.getMemberId() == null || !board.getMemberId().equals(memberId)) {
             throw new AccessDeniedException("본인이 작성한 글만 수정/삭제할 수 있습니다.");
         }
+    }
+
+    private String normalizeSearchType(String searchType) {
+        if (searchType == null) {
+            return "all";
+        }
+
+        return switch (searchType) {
+            case "title", "content", "writer" -> searchType;
+            default -> "all";
+        };
+    }
+
+    private String normalizeKeyword(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return null;
+        }
+
+        return keyword.trim();
     }
 }
