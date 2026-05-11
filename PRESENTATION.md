@@ -480,20 +480,49 @@ imageService.deleteImages(board.getContent());
 
 ### 6-4. 예외 처리
 
-`@RestControllerAdvice`로 전역 예외 처리:
+**`@RestControllerAdvice` 동작 원리**
+
+컨트롤러에서 예외가 던져지면 Spring이 자동으로 `GlobalExceptionHandler`로 라우팅합니다.  
+컨트롤러와 서비스 코드에 try-catch가 없어도 되므로 비즈니스 로직이 깔끔해집니다.
 
 ```
-MethodArgumentNotValidException → 400 (입력값 검증 실패)
-BoardNotFoundException          → 404
-AccessDeniedException           → 403 (권한 없음)
-IllegalArgumentException        → 400 (대댓글 제한 등)
-BoardCreateFailedException      → 500 (DB 오류)
+Service → throw BoardNotFoundException()
+    ↓  (예외 전파)
+Controller  (try-catch 없음, 그냥 위로 던짐)
+    ↓
+GlobalExceptionHandler → 적절한 HTTP 상태코드 + 에러 응답 반환
 ```
 
-모든 에러 응답 형식 통일:
+**전체 예외 → 상태코드 매핑**
+
+| 예외 | 상태코드 | 발생 상황 |
+|------|----------|-----------|
+| `MethodArgumentNotValidException` | 400 | `@Valid` 검증 실패 (필드 누락, 형식 오류) |
+| `MethodArgumentTypeMismatchException` | 400 | 경로 변수 타입 불일치 (`/boards/abc` 등) |
+| `IllegalArgumentException` | 400 | 비즈니스 규칙 위반 (중복 닉네임, 대댓글 제한 등) |
+| `JwtException` | 401 | JWT 서명 오류 또는 만료 |
+| `AccessDeniedException` | 403 | 본인 글/댓글이 아닌데 수정·삭제 시도 |
+| `BoardNotFoundException` | 404 | 존재하지 않는 게시글 조회 |
+| `CommentNotFoundException` | 404 | 존재하지 않는 댓글 조회·수정·삭제 |
+| `DataIntegrityViolationException` | 409 | DB 유니크 제약 위반 (login_id·nickname 중복) |
+| `BoardCreateFailedException` | 500 | 게시글 INSERT 실패 |
+| `BoardUpdateFailedException` | 500 | 게시글 UPDATE 실패 |
+| `BoardDeleteFailedException` | 500 | 게시글 DELETE 실패 |
+| `CommentCreate/Update/DeleteFailedException` | 500 | 댓글 DB 조작 실패 |
+| `IllegalStateException` | 500 | 회원가입·정보수정 등 내부 상태 오류 |
+| `Exception` (최상위) | 500 | 위에서 잡지 못한 모든 예외 — 최후 방어망 |
+
+**커스텀 예외를 따로 만든 이유**
+
+`BoardCreateFailedException`, `BoardNotFoundException` 등을 따로 정의한 이유는 예외 타입만 보고 어느 도메인의 어느 작업이 실패했는지 바로 알 수 있기 때문입니다. 단순히 `RuntimeException`을 throw하면 `GlobalExceptionHandler`에서 세밀한 상태코드 구분이 어렵습니다.
+
+**모든 에러 응답 형식 통일**
+
 ```json
 { "success": false, "message": "게시글을 찾을 수 없습니다." }
 ```
+
+응답 형식을 통일하면 프론트엔드가 에러 처리 로직을 하나로 작성할 수 있습니다.
 
 ---
 
