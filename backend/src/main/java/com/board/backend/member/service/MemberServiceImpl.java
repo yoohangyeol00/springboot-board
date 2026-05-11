@@ -1,18 +1,24 @@
 package com.board.backend.member.service;
 
 import com.board.backend.global.security.JwtTokenProvider;
+import com.board.backend.global.security.TokenHashUtil;
 import com.board.backend.member.domain.Member;
+import com.board.backend.member.domain.RefreshToken;
 import com.board.backend.member.dto.MemberLoginRequest;
 import com.board.backend.member.dto.MemberLoginResponse;
 import com.board.backend.member.dto.MemberMeResponse;
 import com.board.backend.member.dto.MemberPasswordUpdateRequest;
+import com.board.backend.member.dto.RefreshTokenRequest;
 import com.board.backend.member.dto.MemberSignupRequest;
 import com.board.backend.member.dto.MemberUpdateRequest;
 import com.board.backend.member.dto.MemberWithdrawRequest;
 import com.board.backend.member.mapper.MemberMapper;
+import com.board.backend.member.mapper.RefreshTokenMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -21,6 +27,7 @@ public class MemberServiceImpl implements MemberService {
     private static final String ACTIVE_STATUS = "ACTIVE";
 
     private final MemberMapper memberMapper;
+    private final RefreshTokenMapper refreshTokenMapper;
     private final PasswordEncoder passwordEncoder;
     private final JwtTokenProvider jwtTokenProvider;
 
@@ -65,12 +72,50 @@ public class MemberServiceImpl implements MemberService {
 
         memberMapper.resetLoginFailure(member.getId());
 
+        return issueTokens(member);
+    }
+
+    @Override
+    public MemberLoginResponse refresh(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        jwtTokenProvider.validateRefreshToken(refreshToken);
+
+        Long memberId = jwtTokenProvider.getMemberIdFromRefreshToken(refreshToken);
+        String tokenHash = TokenHashUtil.sha256(refreshToken);
+        RefreshToken savedToken = refreshTokenMapper.findValidByTokenHash(tokenHash, LocalDateTime.now());
+
+        if (savedToken == null || !savedToken.getMemberId().equals(memberId)) {
+            throw new IllegalArgumentException("Refresh token is invalid.");
+        }
+
+        Member member = getActiveMember(memberId);
+        refreshTokenMapper.revokeByTokenHash(tokenHash);
+
+        return issueTokens(member);
+    }
+
+    @Override
+    public void logout(RefreshTokenRequest request) {
+        String refreshToken = request.getRefreshToken();
+
+        jwtTokenProvider.validateRefreshToken(refreshToken);
+        refreshTokenMapper.revokeByTokenHash(TokenHashUtil.sha256(refreshToken));
+    }
+
+    private MemberLoginResponse issueTokens(Member member) {
         String accessToken = jwtTokenProvider.createAccessToken(
                 member.getId(),
                 member.getLoginId(),
                 member.getRole());
+        String refreshToken = jwtTokenProvider.createRefreshToken(member.getId());
 
-        return new MemberLoginResponse(accessToken);
+        refreshTokenMapper.save(
+                member.getId(),
+                TokenHashUtil.sha256(refreshToken),
+                jwtTokenProvider.getRefreshTokenExpiresAt());
+
+        return new MemberLoginResponse(accessToken, refreshToken);
     }
 
     @Override

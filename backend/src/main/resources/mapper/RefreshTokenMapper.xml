@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.board.backend.member.mapper.RefreshTokenMapper">
+
+    <resultMap id="RefreshTokenResultMap" type="com.board.backend.member.domain.RefreshToken">
+        <id property="id" column="id"/>
+        <result property="memberId" column="member_id"/>
+        <result property="tokenHash" column="token_hash"/>
+        <result property="expiresAt" column="expires_at"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="revokedAt" column="revoked_at"/>
+    </resultMap>
+
+    <insert id="save">
+        INSERT INTO refresh_tokens (
+            member_id,
+            token_hash,
+            expires_at
+        ) VALUES (
+            #{memberId},
+            #{tokenHash},
+            #{expiresAt}
+        )
+    </insert>
+
+    <select id="findValidByTokenHash" resultMap="RefreshTokenResultMap">
+        SELECT
+            id,
+            member_id,
+            token_hash,
+            expires_at,
+            created_at,
+            revoked_at
+        FROM refresh_tokens
+        WHERE token_hash = #{tokenHash}
+          AND revoked_at IS NULL
+          AND expires_at > #{now}
+    </select>
+
+    <update id="revokeByTokenHash">
+        UPDATE refresh_tokens
+        SET revoked_at = CURRENT_TIMESTAMP
+        WHERE token_hash = #{tokenHash}
+          AND revoked_at IS NULL
+    </update>
+
+    <update id="revokeAllByMemberId" parameterType="long">
+        UPDATE refresh_tokens
+        SET revoked_at = CURRENT_TIMESTAMP
+        WHERE member_id = #{memberId}
+          AND revoked_at IS NULL
+    </update>
+
+</mapper>

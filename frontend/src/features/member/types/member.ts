@@ -11,6 +11,11 @@ export interface MemberLoginRequest {
 
 export interface MemberLoginResponse {
   accessToken: string;
+  refreshToken: string;
+}
+
+export interface RefreshTokenRequest {
+  refreshToken: string;
 }
 
 export interface MemberMe {

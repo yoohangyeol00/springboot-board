@@ -15,6 +15,7 @@ export default function Login() {
     try {
       const response = await memberApi.login({ loginId, password });
       localStorage.setItem('accessToken', response.data.accessToken);
+      localStorage.setItem('refreshToken', response.data.refreshToken);
       navigate('/');
     } catch (err: any) {
       alert(err?.response?.data?.message || '아이디 또는 비밀번호가 올바르지 않습니다.');

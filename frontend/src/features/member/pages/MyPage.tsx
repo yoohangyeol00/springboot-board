@@ -20,6 +20,7 @@ export default function MyPage() {
       })
       .catch(() => {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         alert('로그인이 필요합니다.');
         navigate('/login');
       })
@@ -49,6 +50,7 @@ export default function MyPage() {
       setNewPassword('');
       alert('비밀번호가 변경되었습니다. 다시 로그인해주세요.');
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       navigate('/login');
     } catch (err: any) {
       alert(err?.response?.data?.message || '비밀번호 변경에 실패했습니다.');
@@ -65,6 +67,7 @@ export default function MyPage() {
     try {
       await memberApi.withdraw({ password: withdrawPassword });
       localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
       alert('회원 탈퇴가 완료되었습니다.');
       navigate('/');
     } catch (err: any) {

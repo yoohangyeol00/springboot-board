@@ -27,12 +27,24 @@ function App() {
       .then(res => setMe(res.data))
       .catch(() => {
         localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         setMe(null);
       });
   }, [location.pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const refreshToken = localStorage.getItem('refreshToken');
+
+    if (refreshToken) {
+      try {
+        await memberApi.logout({ refreshToken });
+      } catch {
+        // Always clear the client session, even if the refresh token was already invalid.
+      }
+    }
+
     localStorage.removeItem('accessToken');
+    localStorage.removeItem('refreshToken');
     setMe(null);
     navigate('/');
   };
@@ -45,7 +57,8 @@ function App() {
           <nav className="header-nav">
             {me ? (
               <>
-                <Link to="/mypage" className="header-user">{me.nickname}</Link>
+                <span className="header-user">{me.nickname}</span>
+                <Link to="/mypage" className="nav-link">마이페이지</Link>
                 <button type="button" className="nav-button" onClick={handleLogout}>
                   로그아웃
                 </button>

@@ -1,9 +1,9 @@
 spring:
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://192.168.220.128:5432/board_db
-    username: board_user
-    password: board_pass
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/board_db}
+    username: ${DB_USERNAME:board_user}
+    password: ${DB_PASSWORD:board_pass}
   servlet:
     multipart:
       max-file-size: 10MB
@@ -14,11 +14,12 @@ file:
 
 jwt:
   secret: ${JWT_SECRET:change-this-secret-key-must-be-at-least-32-bytes-long}
-  access-token-expiration: 3600000
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:1209600000}
 
 mybatis:
   mapper-locations: classpath:/mapper/**/*.xml
   type-aliases-package: com.board.backend
 
 server:
-  port: 8080
+  port: ${SERVER_PORT:8080}

@@ -5,6 +5,7 @@ import com.board.backend.member.dto.MemberLoginRequest;
 import com.board.backend.member.dto.MemberLoginResponse;
 import com.board.backend.member.dto.MemberMeResponse;
 import com.board.backend.member.dto.MemberPasswordUpdateRequest;
+import com.board.backend.member.dto.RefreshTokenRequest;
 import com.board.backend.member.dto.MemberSignupRequest;
 import com.board.backend.member.dto.MemberUpdateRequest;
 import com.board.backend.member.dto.MemberWithdrawRequest;
@@ -35,6 +36,16 @@ public class MemberController {
     @PostMapping("/login")
     public MemberLoginResponse login(@Valid @RequestBody MemberLoginRequest request) {
         return memberService.login(request);
+    }
+
+    @PostMapping("/refresh")
+    public MemberLoginResponse refresh(@Valid @RequestBody RefreshTokenRequest request) {
+        return memberService.refresh(request);
+    }
+
+    @PostMapping("/logout")
+    public void logout(@Valid @RequestBody RefreshTokenRequest request) {
+        memberService.logout(request);
     }
 
     @GetMapping("/me")

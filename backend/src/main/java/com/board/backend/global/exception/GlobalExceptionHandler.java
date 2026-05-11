@@ -4,6 +4,10 @@ import com.board.backend.board.exception.BoardCreateFailedException;
 import com.board.backend.board.exception.BoardDeleteFailedException;
 import com.board.backend.board.exception.BoardNotFoundException;
 import com.board.backend.board.exception.BoardUpdateFailedException;
+import com.board.backend.comment.exception.CommentCreateFailedException;
+import com.board.backend.comment.exception.CommentDeleteFailedException;
+import com.board.backend.comment.exception.CommentNotFoundException;
+import com.board.backend.comment.exception.CommentUpdateFailedException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -54,6 +58,38 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BoardDeleteFailedException.class)
     public ResponseEntity<ErrorResponse> handleBoardDeleteFailedException(
             BoardDeleteFailedException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(CommentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleCommentNotFoundException(
+            CommentNotFoundException e) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(CommentCreateFailedException.class)
+    public ResponseEntity<ErrorResponse> handleCommentCreateFailedException(
+            CommentCreateFailedException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(CommentUpdateFailedException.class)
+    public ResponseEntity<ErrorResponse> handleCommentUpdateFailedException(
+            CommentUpdateFailedException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(CommentDeleteFailedException.class)
+    public ResponseEntity<ErrorResponse> handleCommentDeleteFailedException(
+            CommentDeleteFailedException e) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(false, e.getMessage()));
