@@ -2,6 +2,7 @@ services:
   postgres:
     image: postgres:16
     container_name: board-postgres
+    restart: always
     environment:
       POSTGRES_DB: board_db
       POSTGRES_USER: board_user
@@ -17,6 +18,7 @@ services:
     build:
       context: ./backend
     container_name: board-backend
+    restart: always
     depends_on:
       - postgres
     ports:
@@ -30,6 +32,7 @@ services:
     build:
       context: ./frontend
     container_name: board-frontend
+    restart: always
     depends_on:
       - backend
     ports:
