@@ -40,6 +40,24 @@ CREATE INDEX idx_boards_member_id ON boards(member_id);
 CREATE INDEX idx_boards_created_at ON boards(created_at);
 CREATE INDEX idx_boards_view_count ON boards(view_count);
 
+CREATE TABLE board_attachments (
+    id BIGSERIAL PRIMARY KEY,
+    board_id BIGINT NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    stored_name VARCHAR(255) NOT NULL,
+    file_url VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    content_type VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_board_attachments_board
+        FOREIGN KEY (board_id)
+        REFERENCES boards(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_board_attachments_board_id ON board_attachments(board_id);
+
 
 CREATE TABLE refresh_tokens (
     id BIGSERIAL PRIMARY KEY,

@@ -14,6 +14,7 @@ export default function BoardCreate() {
   const editorRef = useRef<Editor>(null);
   const pendingBlobs = useRef<Map<string, Blob>>(new Map());
   const [form, setForm] = useState<FormState>({ title: '' });
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [errors, setErrors] = useState<Partial<FormState & { content: string }>>({});
   const [submitting, setSubmitting] = useState(false);
 
@@ -40,6 +41,16 @@ export default function BoardCreate() {
     if (errors.title) setErrors(prev => ({ ...prev, title: undefined }));
   };
 
+  const handleAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files ?? []);
+    setAttachments(prev => [...prev, ...selectedFiles]);
+    e.target.value = '';
+  };
+
+  const handleRemoveAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, fileIndex) => fileIndex !== index));
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validate()) return;
@@ -57,8 +68,13 @@ export default function BoardCreate() {
       }
       pendingBlobs.current.clear();
 
-      await boardApi.create({ title: form.title, content });
-      navigate('/');
+      const res = await boardApi.create({ title: form.title, content });
+
+      if (attachments.length > 0) {
+        await boardApi.addAttachments(res.data.id, attachments);
+      }
+
+      navigate(`/boards/${res.data.id}`);
     } catch (err: any) {
       const status = err?.response?.status;
       const message = err?.response?.data?.message || '게시글 작성에 실패했습니다.';
@@ -126,6 +142,27 @@ export default function BoardCreate() {
             />
           </div>
           {errors.content && <span className="error-message">{errors.content}</span>}
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Attachments</label>
+          <input type="file" className="form-input" multiple onChange={handleAttachmentChange} />
+          {attachments.length > 0 && (
+            <ul className="attachment-list attachment-list-edit">
+              {attachments.map((file, index) => (
+                <li key={`${file.name}-${index}`} className="attachment-item">
+                  <span className="attachment-name">{file.name}</span>
+                  <button
+                    type="button"
+                    className="comment-action comment-action-danger"
+                    onClick={() => handleRemoveAttachment(index)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="button-group">

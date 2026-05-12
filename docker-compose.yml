@@ -21,6 +21,8 @@ services:
       - postgres
     ports:
       - "8080:8080"
+    volumes:
+      - ./backend/uploads:/app/uploads
     networks:
       - board-network
 

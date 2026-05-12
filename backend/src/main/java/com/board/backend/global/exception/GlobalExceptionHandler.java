@@ -1,5 +1,9 @@
 package com.board.backend.global.exception;
 
+import com.board.backend.attachment.exception.AttachmentDeleteFailedException;
+import com.board.backend.attachment.exception.AttachmentNotFoundException;
+import com.board.backend.attachment.exception.AttachmentSaveFailedException;
+import com.board.backend.attachment.exception.AttachmentUpdateFailedException;
 import com.board.backend.board.exception.BoardCreateFailedException;
 import com.board.backend.board.exception.BoardDeleteFailedException;
 import com.board.backend.board.exception.BoardNotFoundException;
@@ -85,6 +89,38 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BoardDeleteFailedException.class)
     public ResponseEntity<ErrorResponse> handleBoardDeleteFailedException(
             BoardDeleteFailedException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(AttachmentNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAttachmentNotFoundException(
+            AttachmentNotFoundException e) {
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(AttachmentSaveFailedException.class)
+    public ResponseEntity<ErrorResponse> handleAttachmentSaveFailedException(
+            AttachmentSaveFailedException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(AttachmentUpdateFailedException.class)
+    public ResponseEntity<ErrorResponse> handleAttachmentUpdateFailedException(
+            AttachmentUpdateFailedException e) {
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(new ErrorResponse(false, e.getMessage()));
+    }
+
+    @ExceptionHandler(AttachmentDeleteFailedException.class)
+    public ResponseEntity<ErrorResponse> handleAttachmentDeleteFailedException(
+            AttachmentDeleteFailedException e) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(new ErrorResponse(false, e.getMessage()));

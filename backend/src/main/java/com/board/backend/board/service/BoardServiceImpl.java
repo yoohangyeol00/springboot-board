@@ -1,5 +1,6 @@
 package com.board.backend.board.service;
 
+import com.board.backend.attachment.service.BoardAttachmentService;
 import com.board.backend.board.domain.Board;
 import com.board.backend.board.dto.BoardCreateRequest;
 import com.board.backend.board.dto.BoardResponse;
@@ -14,6 +15,7 @@ import com.board.backend.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,14 +25,18 @@ public class BoardServiceImpl implements BoardService {
 
     private final BoardMapper boardMapper;
     private final ImageService imageService;
+    private final BoardAttachmentService attachmentService;
 
     @Override
-    public void create(BoardCreateRequest request, Long memberId) {
+    @Transactional
+    public BoardResponse create(BoardCreateRequest request, Long memberId) {
         int result = boardMapper.save(request, memberId);
 
-        if (result != 1) {
+        if (result != 1 || request.getId() == null) {
             throw new BoardCreateFailedException();
         }
+
+        return getBoardWithoutIncreasingViewCount(request.getId());
     }
 
     @Override
@@ -71,10 +77,11 @@ public class BoardServiceImpl implements BoardService {
 
         Board updatedBoard = boardMapper.findById(id);
 
-        return new BoardResponse(updatedBoard);
+        return new BoardResponse(updatedBoard, attachmentService.getAttachments(id));
     }
 
     @Override
+    @Transactional
     public void updateBoard(Long id, BoardUpdateRequest request, Long memberId) {
         Board board = boardMapper.findById(id);
 
@@ -92,6 +99,7 @@ public class BoardServiceImpl implements BoardService {
     }
 
     @Override
+    @Transactional
     public void deleteBoard(Long id, Long memberId) {
         Board board = boardMapper.findById(id);
 
@@ -101,6 +109,8 @@ public class BoardServiceImpl implements BoardService {
 
         validateOwner(board, memberId);
 
+        List<String> attachmentStoredNames = attachmentService.getStoredNamesByBoardId(id);
+
         imageService.deleteImages(board.getContent());
 
         int result = boardMapper.delete(id);
@@ -108,11 +118,23 @@ public class BoardServiceImpl implements BoardService {
         if (result != 1) {
             throw new BoardDeleteFailedException();
         }
+
+        attachmentService.deleteFiles(attachmentStoredNames);
+    }
+
+    private BoardResponse getBoardWithoutIncreasingViewCount(Long id) {
+        Board board = boardMapper.findById(id);
+
+        if (board == null) {
+            throw new BoardNotFoundException();
+        }
+
+        return new BoardResponse(board, attachmentService.getAttachments(id));
     }
 
     private void validateOwner(Board board, Long memberId) {
         if (board.getMemberId() == null || !board.getMemberId().equals(memberId)) {
-            throw new AccessDeniedException("본인이 작성한 글만 수정/삭제할 수 있습니다.");
+            throw new AccessDeniedException("You can edit or delete only your own board.");
         }
     }
 

@@ -1,9 +1,11 @@
 package com.board.backend.board.dto;
 
+import com.board.backend.attachment.dto.AttachmentResponse;
 import com.board.backend.board.domain.Board;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Getter
 public class BoardResponse {
@@ -16,8 +18,13 @@ public class BoardResponse {
     private final Integer viewCount;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
+    private final List<AttachmentResponse> attachments;
 
     public BoardResponse(Board board) {
+        this(board, List.of());
+    }
+
+    public BoardResponse(Board board, List<AttachmentResponse> attachments) {
         this.id = board.getId();
         this.memberId = board.getMemberId();
         this.title = board.getTitle();
@@ -26,5 +33,6 @@ public class BoardResponse {
         this.viewCount = board.getViewCount();
         this.createdAt = board.getCreatedAt();
         this.updatedAt = board.getUpdatedAt();
+        this.attachments = attachments;
     }
 }

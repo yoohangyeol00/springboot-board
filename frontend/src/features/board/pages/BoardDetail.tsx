@@ -10,6 +10,12 @@ import { MemberMe } from '../../member/types/member';
 import { commentApi } from '../../comment/api/commentApi';
 import { Comment } from '../../comment/types/comment';
 
+const formatFileSize = (size: number) => {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / 1024 / 1024).toFixed(1)} MB`;
+};
+
 export default function BoardDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -312,6 +318,25 @@ export default function BoardDetail() {
       <div className="detail-content">
         <Viewer initialValue={board.content} />
       </div>
+
+      {board.attachments.length > 0 && (
+        <section className="attachment-section">
+          <h2 className="attachment-title">Attachments</h2>
+          <ul className="attachment-list">
+            {board.attachments.map(attachment => (
+              <li key={attachment.id} className="attachment-item">
+                <a
+                  className="attachment-link"
+                  href={boardApi.getAttachmentDownloadUrl(board.id, attachment.id)}
+                >
+                  {attachment.originalName}
+                </a>
+                <span className="attachment-size">{formatFileSize(attachment.fileSize)}</span>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="comment-section">
         <div className="comment-section-header">

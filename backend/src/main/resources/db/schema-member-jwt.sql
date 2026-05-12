@@ -53,6 +53,24 @@ ADD CONSTRAINT fk_boards_member
 FOREIGN KEY (member_id)
 REFERENCES members(id);
 
+CREATE TABLE board_attachments (
+    id BIGSERIAL PRIMARY KEY,
+    board_id BIGINT NOT NULL,
+    original_name VARCHAR(255) NOT NULL,
+    stored_name VARCHAR(255) NOT NULL,
+    file_url VARCHAR(500) NOT NULL,
+    file_size BIGINT NOT NULL,
+    content_type VARCHAR(100),
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_board_attachments_board
+        FOREIGN KEY (board_id)
+        REFERENCES boards(id)
+        ON DELETE CASCADE
+);
+
+CREATE INDEX idx_board_attachments_board_id ON board_attachments(board_id);
+
 CREATE TABLE comments (
     id BIGSERIAL PRIMARY KEY,
     board_id BIGINT NOT NULL,

@@ -8,9 +8,11 @@ import lombok.Setter;
 @Setter
 public class BoardCreateRequest {
 
-    @NotBlank(message = "제목은 필수입니다.")
+    private Long id;
+
+    @NotBlank(message = "Title is required.")
     private String title;
 
-    @NotBlank(message = "내용은 필수입니다.")
+    @NotBlank(message = "Content is required.")
     private String content;
 }

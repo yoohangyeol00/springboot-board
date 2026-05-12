@@ -16,7 +16,7 @@
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
 
-    <insert id="save">
+    <insert id="save" useGeneratedKeys="true" keyProperty="request.id" keyColumn="id">
         INSERT INTO boards (
             title,
             content,

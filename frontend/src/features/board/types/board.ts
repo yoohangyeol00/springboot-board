@@ -7,6 +7,18 @@ export interface Board {
   viewCount: number;
   createdAt: string;
   updatedAt: string;
+  attachments: BoardAttachment[];
+}
+
+export interface BoardAttachment {
+  id: number;
+  boardId: number;
+  originalName: string;
+  fileUrl: string;
+  fileSize: number;
+  contentType: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface PageResponse<T> {

@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Editor } from '@toast-ui/react-editor';
 import '@toast-ui/editor/dist/toastui-editor.css';
 import { boardApi } from '../api/boardApi';
+import { BoardAttachment } from '../types/board';
 
 export default function BoardEdit() {
   const { id } = useParams<{ id: string }>();
@@ -11,9 +12,12 @@ export default function BoardEdit() {
   const pendingBlobs = useRef<Map<string, Blob>>(new Map());
   const [title, setTitle] = useState('');
   const [initialContent, setInitialContent] = useState('');
+  const [attachments, setAttachments] = useState<BoardAttachment[]>([]);
+  const [newAttachments, setNewAttachments] = useState<File[]>([]);
   const [errors, setErrors] = useState<{ title?: string; content?: string }>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
+  const [attachmentSubmitting, setAttachmentSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -21,6 +25,7 @@ export default function BoardEdit() {
       .then(res => {
         setTitle(res.data.title);
         setInitialContent(res.data.content);
+        setAttachments(res.data.attachments ?? []);
       })
       .catch(() => {
         alert('게시글을 찾을 수 없습니다.');
@@ -69,6 +74,69 @@ export default function BoardEdit() {
     pendingBlobs.current.forEach((_, url) => URL.revokeObjectURL(url));
     pendingBlobs.current.clear();
     navigate(`/boards/${id}`);
+  };
+
+  const handleNewAttachmentChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selectedFiles = Array.from(e.target.files ?? []);
+    setNewAttachments(prev => [...prev, ...selectedFiles]);
+    e.target.value = '';
+  };
+
+  const handleRemoveNewAttachment = (index: number) => {
+    setNewAttachments(prev => prev.filter((_, fileIndex) => fileIndex !== index));
+  };
+
+  const handleAddAttachments = async () => {
+    if (!id || newAttachments.length === 0) return;
+
+    try {
+      setAttachmentSubmitting(true);
+      const res = await boardApi.addAttachments(Number(id), newAttachments);
+      setAttachments(res.data);
+      setNewAttachments([]);
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to add attachments.');
+    } finally {
+      setAttachmentSubmitting(false);
+    }
+  };
+
+  const handleDeleteAttachment = async (attachmentId: number) => {
+    if (!id || !window.confirm('Delete this attachment?')) return;
+
+    try {
+      setAttachmentSubmitting(true);
+      await boardApi.deleteAttachment(Number(id), attachmentId);
+      setAttachments(prev => prev.filter(attachment => attachment.id !== attachmentId));
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to delete attachment.');
+    } finally {
+      setAttachmentSubmitting(false);
+    }
+  };
+
+  const handleReplaceAttachment = async (
+    attachmentId: number,
+    e: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (!id) return;
+
+    const file = e.target.files?.[0];
+    e.target.value = '';
+
+    if (!file) return;
+
+    try {
+      setAttachmentSubmitting(true);
+      const res = await boardApi.replaceAttachment(Number(id), attachmentId, file);
+      setAttachments(prev =>
+        prev.map(attachment => (attachment.id === attachmentId ? res.data : attachment)),
+      );
+    } catch (err: any) {
+      alert(err?.response?.data?.message || 'Failed to replace attachment.');
+    } finally {
+      setAttachmentSubmitting(false);
+    }
   };
 
   if (loading) {
@@ -126,6 +194,73 @@ export default function BoardEdit() {
             />
           </div>
           {errors.content && <span className="error-message">{errors.content}</span>}
+        </div>
+
+        <div className="form-group">
+          <label className="form-label">Attachments</label>
+
+          {attachments.length > 0 ? (
+            <ul className="attachment-list attachment-list-edit">
+              {attachments.map(attachment => (
+                <li key={attachment.id} className="attachment-item attachment-item-edit">
+                  <a
+                    className="attachment-link"
+                    href={boardApi.getAttachmentDownloadUrl(Number(id), attachment.id)}
+                  >
+                    {attachment.originalName}
+                  </a>
+                  <div className="attachment-actions">
+                    <label className="comment-action attachment-replace">
+                      Replace
+                      <input
+                        type="file"
+                        disabled={attachmentSubmitting}
+                        onChange={event => handleReplaceAttachment(attachment.id, event)}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="comment-action comment-action-danger"
+                      disabled={attachmentSubmitting}
+                      onClick={() => handleDeleteAttachment(attachment.id)}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="attachment-empty">No attachments.</div>
+          )}
+
+          <input type="file" className="form-input" multiple onChange={handleNewAttachmentChange} />
+
+          {newAttachments.length > 0 && (
+            <ul className="attachment-list attachment-list-edit">
+              {newAttachments.map((file, index) => (
+                <li key={`${file.name}-${index}`} className="attachment-item">
+                  <span className="attachment-name">{file.name}</span>
+                  <button
+                    type="button"
+                    className="comment-action comment-action-danger"
+                    onClick={() => handleRemoveNewAttachment(index)}
+                  >
+                    Remove
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+
+          <button
+            type="button"
+            className="btn btn-secondary attachment-add-button"
+            disabled={attachmentSubmitting || newAttachments.length === 0}
+            onClick={handleAddAttachments}
+          >
+            Add Attachments
+          </button>
         </div>
 
         <div className="button-group">

@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.board.backend.attachment.mapper.BoardAttachmentMapper">
+
+    <resultMap id="BoardAttachmentResultMap" type="com.board.backend.attachment.domain.BoardAttachment">
+        <id property="id" column="id"/>
+        <result property="boardId" column="board_id"/>
+        <result property="originalName" column="original_name"/>
+        <result property="storedName" column="stored_name"/>
+        <result property="fileUrl" column="file_url"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="contentType" column="content_type"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <insert id="save" useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+        INSERT INTO board_attachments (
+            board_id,
+            original_name,
+            stored_name,
+            file_url,
+            file_size,
+            content_type
+        ) VALUES (
+            #{boardId},
+            #{originalName},
+            #{storedName},
+            #{fileUrl},
+            #{fileSize},
+            #{contentType}
+        )
+    </insert>
+
+    <select id="findByBoardId" parameterType="long" resultMap="BoardAttachmentResultMap">
+        SELECT
+            id,
+            board_id,
+            original_name,
+            stored_name,
+            file_url,
+            file_size,
+            content_type,
+            created_at,
+            updated_at
+        FROM board_attachments
+        WHERE board_id = #{boardId}
+        ORDER BY id ASC
+    </select>
+
+    <select id="findByIdAndBoardId" resultMap="BoardAttachmentResultMap">
+        SELECT
+            id,
+            board_id,
+            original_name,
+            stored_name,
+            file_url,
+            file_size,
+            content_type,
+            created_at,
+            updated_at
+        FROM board_attachments
+        WHERE id = #{id}
+          AND board_id = #{boardId}
+    </select>
+
+    <select id="countByBoardId" parameterType="long" resultType="int">
+        SELECT COUNT(*)
+        FROM board_attachments
+        WHERE board_id = #{boardId}
+    </select>
+
+    <update id="updateFile">
+        UPDATE board_attachments
+        SET
+            original_name = #{originalName},
+            stored_name = #{storedName},
+            file_url = #{fileUrl},
+            file_size = #{fileSize},
+            content_type = #{contentType},
+            updated_at = CURRENT_TIMESTAMP
+        WHERE id = #{id}
+          AND board_id = #{boardId}
+    </update>
+
+    <delete id="delete">
+        DELETE FROM board_attachments
+        WHERE id = #{id}
+          AND board_id = #{boardId}
+    </delete>
+
+</mapper>

@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface BoardService {
 
-    void create(BoardCreateRequest request, Long memberId);
+    BoardResponse create(BoardCreateRequest request, Long memberId);
 
     PageResponse<BoardResponse> getBoards(int page, int size, String searchType, String keyword);
 
