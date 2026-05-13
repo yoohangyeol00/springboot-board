@@ -13,6 +13,7 @@ export default function BoardEdit() {
   const [title, setTitle] = useState('');
   const [initialContent, setInitialContent] = useState('');
   const [attachments, setAttachments] = useState<BoardAttachment[]>([]);
+  const [deletedAttachmentIds, setDeletedAttachmentIds] = useState<number[]>([]);
   const [newAttachments, setNewAttachments] = useState<File[]>([]);
   const [errors, setErrors] = useState<{ title?: string; content?: string }>({});
   const [loading, setLoading] = useState(true);
@@ -60,7 +61,18 @@ export default function BoardEdit() {
       }
       pendingBlobs.current.clear();
 
-      await boardApi.update(Number(id), { title, content });
+      const boardId = Number(id);
+
+      await boardApi.update(boardId, { title, content });
+
+      for (const attachmentId of deletedAttachmentIds) {
+        await boardApi.deleteAttachment(boardId, attachmentId);
+      }
+
+      if (newAttachments.length > 0) {
+        await boardApi.addAttachments(boardId, newAttachments);
+      }
+
       navigate(`/boards/${id}`);
     } catch (err: any) {
       const message = err?.response?.data?.message || '수정에 실패했습니다.';
@@ -86,33 +98,11 @@ export default function BoardEdit() {
     setNewAttachments(prev => prev.filter((_, fileIndex) => fileIndex !== index));
   };
 
-  const handleAddAttachments = async () => {
-    if (!id || newAttachments.length === 0) return;
-
-    try {
-      setAttachmentSubmitting(true);
-      const res = await boardApi.addAttachments(Number(id), newAttachments);
-      setAttachments(res.data);
-      setNewAttachments([]);
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to add attachments.');
-    } finally {
-      setAttachmentSubmitting(false);
-    }
-  };
-
   const handleDeleteAttachment = async (attachmentId: number) => {
-    if (!id || !window.confirm('Delete this attachment?')) return;
-
-    try {
-      setAttachmentSubmitting(true);
-      await boardApi.deleteAttachment(Number(id), attachmentId);
-      setAttachments(prev => prev.filter(attachment => attachment.id !== attachmentId));
-    } catch (err: any) {
-      alert(err?.response?.data?.message || 'Failed to delete attachment.');
-    } finally {
-      setAttachmentSubmitting(false);
-    }
+    setDeletedAttachmentIds(prev =>
+      prev.includes(attachmentId) ? prev : [...prev, attachmentId],
+    );
+    setAttachments(prev => prev.filter(attachment => attachment.id !== attachmentId));
   };
 
   const handleReplaceAttachment = async (
@@ -253,14 +243,6 @@ export default function BoardEdit() {
             </ul>
           )}
 
-          <button
-            type="button"
-            className="btn btn-secondary attachment-add-button"
-            disabled={attachmentSubmitting || newAttachments.length === 0}
-            onClick={handleAddAttachments}
-          >
-            Add Attachments
-          </button>
         </div>
 
         <div className="button-group">

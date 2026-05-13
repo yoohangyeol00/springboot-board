@@ -43,5 +43,8 @@ backend/src/main/resources/application.yml
 backend/src/main/resources/application-*.yml
 !backend/src/main/resources/application-example.yml
 
+### Uploaded files ###
+backend/uploads/
+
 ### Accidental npm files in backend ###
 backend/package-lock.json

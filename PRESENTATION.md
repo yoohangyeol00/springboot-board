@@ -27,7 +27,7 @@
 
 | 항목 | 내용 |
 |------|------|
-| 목적 | 회원가입/로그인부터 게시글 CRUD, 댓글(대댓글), 이미지 업로드까지 갖춘 게시판 |
+| 목적 | JWT 인증(Access/Refresh Token)을 직접 구현하고, 게시판 CRUD·검색·인기글·댓글(대댓글)·첨부파일까지 갖춘 게시판. Docker + GitHub Actions로 AWS EC2에 자동 배포 |
 | 인증 방식 | JWT Access Token + Refresh Token (토큰 로테이션, DB 저장) |
 | 백엔드 | Spring Boot 3 + MyBatis + PostgreSQL |
 | 프론트엔드 | React 18 + TypeScript + Toast UI Editor |
@@ -37,6 +37,7 @@
 - **회원**: 가입 / 로그인 / 내 정보 조회 / 닉네임 수정 / 비밀번호 변경 / 탈퇴
 - **게시글**: 목록(페이징) / 검색(제목·내용·작성자·전체) / 인기글 / 상세 조회(조회수++) / 작성 / 수정 / 삭제
 - **댓글**: 작성 / 수정 / 소프트 삭제 / 대댓글(1단계)
+- **첨부파일**: 추가(최대 10개, 10MB/개) / 다운로드 / 교체 / 삭제 / 게시글 삭제 시 자동 정리
 - **이미지**: 업로드 / 자동 삭제(게시글 삭제 시)
 
 ---
@@ -94,6 +95,12 @@ com.board.backend
 │   ├── domain/        Comment.java (엔티티)
 │   ├── dto/           CommentCreateRequest, CommentUpdateRequest, CommentResponse
 │   └── exception/     CommentNotFoundException, CommentCreateFailedException, ...
+├── attachment/
+│   ├── domain/        BoardAttachment.java
+│   ├── dto/           AttachmentResponse.java, StoredAttachmentFile.java
+│   ├── exception/     AttachmentNotFoundException, AttachmentSaveFailedException, ...
+│   ├── mapper/        BoardAttachmentMapper (MyBatis 인터페이스)
+│   └── service/       BoardAttachmentService, AttachmentStorageService
 ├── image/
 │   ├── controller/    ImageController.java
 │   └── service/       ImageService.java
@@ -148,6 +155,7 @@ public class BoardServiceImpl implements BoardService { ... }
 members (1) ──< boards (N)
 members (1) ──< refresh_tokens (N)
 boards  (1) ──< comments (N)
+boards  (1) ──< board_attachments (N)
 comments (1) ──< comments (N)   ← self-referencing (대댓글)
 ```
 
@@ -176,6 +184,22 @@ comments (1) ──< comments (N)   ← self-referencing (대댓글)
 | content | TEXT | 내용 (마크다운 HTML) |
 | writer | VARCHAR | 작성자 닉네임 스냅샷 |
 | view_count | INT | 조회수 |
+
+#### board_attachments
+
+| 컬럼 | 타입 | 설명 |
+|------|------|------|
+| id | BIGSERIAL PK | - |
+| board_id | BIGINT FK | 게시글 (ON DELETE CASCADE) |
+| original_name | VARCHAR(255) | 원본 파일명 (다운로드 시 사용) |
+| stored_name | VARCHAR(255) | UUID 기반 저장 파일명 |
+| file_url | VARCHAR(500) | 접근 URL (`/uploads/attachments/uuid.ext`) |
+| file_size | BIGINT | 바이트 단위 파일 크기 |
+| content_type | VARCHAR(100) | MIME 타입 |
+
+```sql
+CREATE INDEX idx_board_attachments_board_id ON board_attachments(board_id);
+```
 
 #### refresh_tokens
 
@@ -478,12 +502,84 @@ imageService.deleteImages(board.getContent());
 
 **WebConfig**: `/uploads/**` 경로를 로컬 디렉토리로 매핑해 정적 파일 서빙
 
-### 6-4. 예외 처리
+### 6-4. 첨부파일
+
+**전체 흐름**
+
+```
+[파일 추가]
+POST /api/boards/{boardId}/attachments (multipart/form-data, files=[])
+  → 소유자 검증 → 파일 유효성 검사 → 개수 제한 확인
+  → UUID 파일명으로 uploads/attachments/ 에 저장
+  → board_attachments DB 삽입 (@Transactional)
+  ← 저장된 첨부파일 목록 반환
+
+[다운로드]
+GET /api/boards/{boardId}/attachments/{attachmentId}/download
+  → DB에서 메타데이터 조회 → 파일 존재 확인
+  ← Content-Disposition: attachment; filename="원본파일명"
+     (브라우저가 자동으로 다운로드 처리)
+
+[교체]
+PUT /api/boards/{boardId}/attachments/{attachmentId} (multipart)
+  → 새 파일 저장 → DB 업데이트 → 기존 파일 삭제
+  → 중간 실패 시 새로 저장한 파일 정리 (보상 처리)
+
+[게시글 삭제 시]
+DELETE /api/boards/{id}
+  → DB 삭제 (ON DELETE CASCADE로 board_attachments row 자동 삭제)
+  → 실제 파일은 서비스 코드에서 직접 삭제 (DB가 파일 시스템 관리 안 하므로)
+```
+
+**제약 조건**
+
+| 항목 | 제한값 |
+|------|--------|
+| 게시글당 최대 파일 수 | 10개 |
+| 파일 1개 최대 크기 | 10 MB |
+| 차단 확장자 | `.exe` `.bat` `.cmd` `.com` `.sh` `.js` `.jsp` `.php` `.msi` |
+
+**보안 처리 (AttachmentStorageService)**
+
+```java
+// 1. 차단 확장자 검증
+if (BLOCKED_EXTENSIONS.contains(extension.toLowerCase())) {
+    throw new IllegalArgumentException("This file type is not allowed.");
+}
+
+// 2. 경로 조작(Path Traversal) 공격 방지
+Path target = attachmentPath.resolve(storedName).normalize();
+if (!target.startsWith(attachmentPath)) {
+    throw new IllegalArgumentException("Invalid file path.");
+}
+
+// 3. UUID 저장명 → 원본 파일명은 DB에만 보관
+String storedName = UUID.randomUUID() + extension;
+```
+
+**트랜잭션과 파일 시스템의 불일치 처리**
+
+DB와 파일 시스템은 같은 트랜잭션으로 묶을 수 없습니다.  
+파일을 저장하다 실패하면 이미 저장된 파일을 직접 정리해야 합니다.
+
+```java
+try {
+    for (MultipartFile file : files) {
+        storedFile = storageService.save(file);         // 1. 파일 저장
+        savedStoredNames.add(storedFile.getStoredName());
+        attachmentMapper.save(attachment);              // 2. DB 삽입
+    }
+} catch (Exception e) {
+    deleteFiles(savedStoredNames);                      // 3. 실패 시 저장된 파일 전부 정리
+    throw e;
+}
+```
+
+### 6-5. 예외 처리
 
 **`@RestControllerAdvice` 동작 원리**
 
-컨트롤러에서 예외가 던져지면 Spring이 자동으로 `GlobalExceptionHandler`로 라우팅합니다.  
-컨트롤러와 서비스 코드에 try-catch가 없어도 되므로 비즈니스 로직이 깔끔해집니다.
+컨트롤러에서 예외가 던져지면 Spring이 자동으로 `GlobalExceptionHandler`로 라우팅합니다.
 
 ```
 Service → throw BoardNotFoundException()
@@ -491,6 +587,23 @@ Service → throw BoardNotFoundException()
 Controller  (try-catch 없음, 그냥 위로 던짐)
     ↓
 GlobalExceptionHandler → 적절한 HTTP 상태코드 + 에러 응답 반환
+```
+
+**비즈니스 예외는 try-catch 없이 throw만** 하면 `GlobalExceptionHandler`가 처리하므로 코드가 깔끔해집니다.  
+단, **파일 시스템 보상 처리**가 필요한 경우는 예외입니다. DB 트랜잭션은 롤백이 자동이지만 파일 시스템은 자동 롤백이 없으므로, 실패 시 이미 저장한 파일을 catch 블록에서 직접 정리한 뒤 예외를 **다시 throw** 합니다. re-throw된 예외는 결국 `GlobalExceptionHandler`로 전달됩니다.
+
+```java
+// 파일 교체 시 보상 처리 예시 (BoardAttachmentService)
+try {
+    storedFile = storageService.save(file);      // 1. 새 파일 저장
+    attachmentMapper.updateFile(newAttachment);  // 2. DB 업데이트
+    storageService.deleteQuietly(oldFile);       // 3. 기존 파일 삭제
+} catch (IOException | RuntimeException e) {
+    if (storedFile != null) {
+        storageService.deleteQuietly(storedFile.getStoredName()); // 새 파일 정리
+    }
+    throw e;  // ← 정리 후 다시 throw → GlobalExceptionHandler가 응답 처리
+}
 ```
 
 **전체 예외 → 상태코드 매핑**
@@ -551,6 +664,15 @@ GlobalExceptionHandler → 적절한 HTTP 상태코드 + 에러 응답 반환
 | GET | `/api/boards/{id}` | X | 상세 조회 + 조회수++ |
 | PUT | `/api/boards/{id}` | O | 수정 (작성자만) |
 | DELETE | `/api/boards/{id}` | O | 삭제 (작성자만) |
+
+### 첨부파일
+
+| Method | URL | 인증 | 설명 |
+|--------|-----|------|------|
+| POST | `/api/boards/{boardId}/attachments` | O | 파일 추가 (multipart, 작성자만) |
+| DELETE | `/api/boards/{boardId}/attachments/{attachmentId}` | O | 파일 삭제 (작성자만) |
+| PUT | `/api/boards/{boardId}/attachments/{attachmentId}` | O | 파일 교체 (multipart, 작성자만) |
+| GET | `/api/boards/{boardId}/attachments/{attachmentId}/download` | X | 파일 다운로드 |
 
 ### 댓글
 
@@ -794,12 +916,70 @@ Entity를 직접 반환하면 내부 필드가 모두 노출되는 위험이 있
 
 ---
 
+## 12. CI/CD & 배포 구조
+
+### 전체 배포 흐름
+
+```
+개발자 → git push origin main
+    ↓
+GitHub Actions (deploy.yml) 자동 트리거
+    ↓
+EC2에 SSH 접속 (appleboy/ssh-action)
+    ↓
+git pull origin main          ← 최신 코드 받기
+./mvnw clean package -DskipTests  ← 백엔드 빌드 (JAR 생성)
+docker compose down           ← 기존 컨테이너 종료
+docker compose up -d --build  ← 새 이미지로 컨테이너 재시작
+```
+
+### Docker Compose 구성
+
+```
+[사용자 브라우저]
+    ↓ :80
+[frontend 컨테이너]  (React → Nginx)
+    ↓ :8080
+[backend 컨테이너]   (Spring Boot JAR)
+    ↓ :5432
+[postgres 컨테이너]  (PostgreSQL 16)
+```
+
+세 컨테이너는 `board-network`로 내부 통신하고, 외부에는 80(프론트), 8080(백엔드), 5432(DB)만 노출합니다.
+
+### Volume 설정 — 데이터 영속성
+
+```yaml
+volumes:
+  board_pg_data:              # PostgreSQL 데이터 (컨테이너 재생성 시에도 보존)
+
+services:
+  backend:
+    volumes:
+      - ./backend/uploads:/app/uploads   # 업로드 파일 (이미지 + 첨부파일)
+```
+
+`restart: always`로 서버 재부팅 시 컨테이너가 자동으로 다시 올라옵니다.
+
+### GitHub Actions Secrets
+
+EC2 접속 정보는 코드에 하드코딩하지 않고 GitHub Secrets에 저장합니다.
+
+| Secret 키 | 내용 |
+|-----------|------|
+| `EC2_HOST` | EC2 퍼블릭 IP 또는 도메인 |
+| `EC2_USER` | SSH 접속 유저 (예: `ubuntu`) |
+| `EC2_SSH_KEY` | EC2 접속용 PEM 키 (Private Key) |
+
+---
+
 ## 빠른 발표 흐름 제안
 
-1. **"이런 프로젝트입니다"** → 기술 스택 소개 (JWT + Refresh Token, Spring Boot, MyBatis, React)
-2. **"이런 기능을 만들었습니다"** → 회원/게시판/댓글/이미지 기능 시연
+1. **"이런 프로젝트입니다"** → 기술 스택 소개 (JWT + Refresh Token, Spring Boot, MyBatis, React, Docker, GitHub Actions)
+2. **"이런 기능을 만들었습니다"** → 회원/게시판/검색/인기글/댓글/첨부파일 기능 시연
 3. **"이런 구조로 만들었습니다"** → 레이어드 아키텍처, 도메인별 패키지 설명
 4. **"인증은 이렇게 동작합니다"** → 로그인 → Access/Refresh 발급 → 재발급 → 로그아웃(DB 폐기) 흐름 설명
-5. **"DB는 이렇게 설계했습니다"** → ERD (refresh_tokens 포함), 소프트 삭제, 인덱스
-6. **"보안은 이렇게 고려했습니다"** → 토큰 로테이션, SHA-256 해시 저장, tokenType 혼용 방지
-7. **"이런 부분을 더 개선할 수 있습니다"** → Access Token HttpOnly 쿠키, S3 이미지, Redis 블랙리스트(Access Token 즉시 무효화)
+5. **"DB는 이렇게 설계했습니다"** → ERD (board_attachments, refresh_tokens 포함), 소프트 삭제, 인덱스
+6. **"보안은 이렇게 고려했습니다"** → 토큰 로테이션, SHA-256 해시, 차단 확장자, 경로 조작 방지, 트랜잭션-파일시스템 불일치 처리
+7. **"배포는 이렇게 합니다"** → GitHub Actions → EC2 SSH → Docker Compose 재배포, Volume으로 데이터 영속성
+8. **"이런 부분을 더 개선할 수 있습니다"** → Access Token HttpOnly 쿠키, S3 이미지/첨부파일 스토리지, Redis 블랙리스트
