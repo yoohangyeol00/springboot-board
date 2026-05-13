@@ -96,6 +96,8 @@ public class BoardServiceImpl implements BoardService {
         if (result != 1) {
             throw new BoardUpdateFailedException();
         }
+
+        imageService.deleteRemovedImages(board.getContent(), request.getContent());
     }
 
     @Override

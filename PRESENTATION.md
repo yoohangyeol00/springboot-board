@@ -489,15 +489,43 @@ if (parent.getParentId() != null) {
 ### 6-3. 이미지 업로드
 
 **흐름**:
-1. 에디터에서 이미지 삽입 → 브라우저 임시 Blob URL 생성
-2. 게시글 저장 시 Blob URL들을 서버에 업로드 (`POST /api/images`)
-3. 서버: UUID 파일명으로 로컬 디스크에 저장, `/uploads/uuid.ext` URL 반환
-4. 본문의 Blob URL을 영구 URL로 교체 후 게시글 저장
+1. 에디터에서 이미지 삽입 → `POST /api/images`로 즉시 업로드
+2. 서버: UUID 파일명으로 로컬 디스크에 저장, `/uploads/uuid.ext` URL 반환
+3. 에디터가 반환된 URL을 본문에 삽입한 채로 게시글 저장
+
+**게시글 수정 시 이미지 정리 (`deleteRemovedImages`)**:
+
+수정 전후 본문을 비교해 사라진 이미지만 선별 삭제합니다.
+
+```java
+// BoardServiceImpl.updateBoard()
+imageService.deleteRemovedImages(board.getContent(), request.getContent());
+
+// ImageService.deleteRemovedImages()
+public void deleteRemovedImages(String oldContent, String newContent) {
+    Set<String> oldImageUrls = extractImageUrls(oldContent);
+    Set<String> newImageUrls = extractImageUrls(newContent);
+
+    oldImageUrls.removeAll(newImageUrls);  // 차집합: 새 본문에서 사라진 이미지만
+    oldImageUrls.forEach(this::deleteImage);
+}
+```
+
+정규식 패턴으로 `/uploads/attachments/`는 제외하고 인라인 이미지만 추출합니다.
+
+```
+/uploads/(?!attachments/)[^\s"')\]]+
+```
 
 **게시글 삭제 시 이미지 정리**:
+
+이미지 삭제 → DB 삭제 → 첨부파일 삭제 순서로 처리합니다.
+
 ```java
-// 본문에서 /uploads/ 경로 파싱해 파일 삭제
-imageService.deleteImages(board.getContent());
+// BoardServiceImpl.deleteBoard()
+imageService.deleteImages(board.getContent());  // 1. 인라인 이미지 전부 삭제
+boardMapper.delete(id);                         // 2. DB에서 게시글 삭제
+attachmentService.deleteFiles(attachmentStoredNames); // 3. 첨부파일 삭제
 ```
 
 **WebConfig**: `/uploads/**` 경로를 로컬 디렉토리로 매핑해 정적 파일 서빙

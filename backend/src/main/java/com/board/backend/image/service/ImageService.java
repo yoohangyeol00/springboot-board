@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -16,6 +18,8 @@ import java.util.regex.Pattern;
 @Slf4j
 @Service
 public class ImageService {
+
+    private static final Pattern UPLOAD_IMAGE_PATTERN = Pattern.compile("/uploads/(?!attachments/)[^\\s\"')\\]]+");
 
     @Value("${file.upload-dir}")
     private String uploadDir;
@@ -35,22 +39,48 @@ public class ImageService {
     }
 
     public void deleteImages(String content) {
-        if (content == null || !content.contains("/uploads/")) return;
+        extractImageUrls(content).forEach(this::deleteImage);
+    }
 
-        Path uploadPath = Paths.get(uploadDir).toAbsolutePath();
-        Pattern pattern = Pattern.compile("/uploads/[^\\s\"')\\]]+");
-        Matcher matcher = pattern.matcher(content);
+    public void deleteRemovedImages(String oldContent, String newContent) {
+        Set<String> oldImageUrls = extractImageUrls(oldContent);
+        Set<String> newImageUrls = extractImageUrls(newContent);
 
+        oldImageUrls.removeAll(newImageUrls);
+        oldImageUrls.forEach(this::deleteImage);
+    }
+
+    private Set<String> extractImageUrls(String content) {
+        Set<String> imageUrls = new LinkedHashSet<>();
+
+        if (content == null || !content.contains("/uploads/")) {
+            return imageUrls;
+        }
+
+        Matcher matcher = UPLOAD_IMAGE_PATTERN.matcher(content);
         while (matcher.find()) {
-            String filename = matcher.group().substring("/uploads/".length());
-            Path filePath = uploadPath.resolve(filename);
-            log.info("[ImageDelete] 삭제 시도: {}", filePath);
-            try {
-                boolean deleted = Files.deleteIfExists(filePath);
-                log.info("[ImageDelete] 결과: {}", deleted ? "삭제 성공" : "파일 없음");
-            } catch (IOException e) {
-                log.error("[ImageDelete] 삭제 실패: {}", filePath, e);
-            }
+            imageUrls.add(matcher.group());
+        }
+
+        return imageUrls;
+    }
+
+    private void deleteImage(String imageUrl) {
+        Path uploadPath = Paths.get(uploadDir).toAbsolutePath();
+        String filename = imageUrl.substring("/uploads/".length());
+        Path filePath = uploadPath.resolve(filename).normalize();
+
+        if (!filePath.startsWith(uploadPath)) {
+            log.warn("[ImageDelete] Invalid image path: {}", filePath);
+            return;
+        }
+
+        log.info("[ImageDelete] Deleting image: {}", filePath);
+        try {
+            boolean deleted = Files.deleteIfExists(filePath);
+            log.info("[ImageDelete] Result: {}", deleted ? "deleted" : "not found");
+        } catch (IOException e) {
+            log.error("[ImageDelete] Failed to delete image: {}", filePath, e);
         }
     }
 
