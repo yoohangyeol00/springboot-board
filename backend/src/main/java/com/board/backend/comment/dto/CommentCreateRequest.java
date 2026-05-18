@@ -8,6 +8,8 @@ import lombok.Setter;
 @Setter
 public class CommentCreateRequest {
 
+    private Long id;
+
     @NotBlank(message = "댓글 내용을 입력해주세요.")
     private String content;
 

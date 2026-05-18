@@ -16,6 +16,7 @@ public class BoardResponse {
     private final String content;
     private final String writer;
     private final Integer viewCount;
+    private final Integer commentCount;
     private final LocalDateTime createdAt;
     private final LocalDateTime updatedAt;
     private final List<AttachmentResponse> attachments;
@@ -31,6 +32,7 @@ public class BoardResponse {
         this.content = board.getContent();
         this.writer = board.getWriter();
         this.viewCount = board.getViewCount();
+        this.commentCount = board.getCommentCount() == null ? 0 : board.getCommentCount();
         this.createdAt = board.getCreatedAt();
         this.updatedAt = board.getUpdatedAt();
         this.attachments = attachments;

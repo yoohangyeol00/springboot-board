@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "https://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.board.backend.notification.mapper.NotificationMapper">
+
+    <resultMap id="NotificationResultMap" type="com.board.backend.notification.domain.Notification">
+        <id property="id" column="id"/>
+        <result property="receiverId" column="receiver_id"/>
+        <result property="boardId" column="board_id"/>
+        <result property="commentId" column="comment_id"/>
+        <result property="message" column="message"/>
+        <result property="read" column="is_read"/>
+        <result property="createdAt" column="created_at"/>
+    </resultMap>
+
+    <insert id="save">
+        INSERT INTO notifications (
+            receiver_id,
+            board_id,
+            comment_id,
+            message
+        ) VALUES (
+            #{receiverId},
+            #{boardId},
+            #{commentId},
+            #{message}
+        )
+    </insert>
+
+    <select id="findByReceiverId" parameterType="long" resultMap="NotificationResultMap">
+        SELECT
+            id,
+            receiver_id,
+            board_id,
+            comment_id,
+            message,
+            is_read,
+            created_at
+        FROM notifications
+        WHERE receiver_id = #{receiverId}
+        ORDER BY created_at DESC, id DESC
+        LIMIT 20
+    </select>
+
+    <select id="countUnread" parameterType="long" resultType="long">
+        SELECT COUNT(*)
+        FROM notifications
+        WHERE receiver_id = #{receiverId}
+          AND is_read = FALSE
+    </select>
+
+    <update id="markAsRead">
+        UPDATE notifications
+        SET is_read = TRUE
+        WHERE id = #{id}
+          AND receiver_id = #{receiverId}
+    </update>
+
+    <update id="markAllAsRead" parameterType="long">
+        UPDATE notifications
+        SET is_read = TRUE
+        WHERE receiver_id = #{receiverId}
+          AND is_read = FALSE
+    </update>
+</mapper>

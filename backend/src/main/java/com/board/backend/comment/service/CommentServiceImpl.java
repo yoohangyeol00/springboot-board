@@ -1,6 +1,7 @@
 package com.board.backend.comment.service;
 
 import com.board.backend.board.exception.BoardNotFoundException;
+import com.board.backend.board.domain.Board;
 import com.board.backend.board.mapper.BoardMapper;
 import com.board.backend.comment.domain.Comment;
 import com.board.backend.comment.dto.CommentCreateRequest;
@@ -11,9 +12,11 @@ import com.board.backend.comment.exception.CommentDeleteFailedException;
 import com.board.backend.comment.exception.CommentNotFoundException;
 import com.board.backend.comment.exception.CommentUpdateFailedException;
 import com.board.backend.comment.mapper.CommentMapper;
+import com.board.backend.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -23,19 +26,34 @@ public class CommentServiceImpl implements CommentService {
 
     private final CommentMapper commentMapper;
     private final BoardMapper boardMapper;
+    private final NotificationService notificationService;
 
     @Override
+    @Transactional
     public void create(Long boardId, CommentCreateRequest request, Long memberId) {
-        if (boardMapper.findById(boardId) == null) {
+        Board board = boardMapper.findById(boardId);
+
+        if (board == null) {
             throw new BoardNotFoundException();
         }
 
-        validateParentComment(boardId, request.getParentId());
+        Comment parentComment = validateParentComment(boardId, request.getParentId());
 
         int result = commentMapper.save(boardId, memberId, request);
 
         if (result != 1) {
             throw new CommentCreateFailedException();
+        }
+
+        Comment comment = commentMapper.findById(request.getId());
+
+        if (parentComment != null) {
+            notifyReplyWriter(parentComment, boardId, request.getId(), memberId, comment.getWriter());
+            return;
+        }
+
+        if (board.getMemberId() != null && !board.getMemberId().equals(memberId)) {
+            notificationService.notifyComment(board.getMemberId(), boardId, request.getId(), comment.getWriter());
         }
     }
 
@@ -79,9 +97,9 @@ public class CommentServiceImpl implements CommentService {
         }
     }
 
-    private void validateParentComment(Long boardId, Long parentId) {
+    private Comment validateParentComment(Long boardId, Long parentId) {
         if (parentId == null) {
-            return;
+            return null;
         }
 
         Comment parent = commentMapper.findById(parentId);
@@ -92,6 +110,14 @@ public class CommentServiceImpl implements CommentService {
 
         if (parent.getParentId() != null) {
             throw new IllegalArgumentException("대댓글에는 답글을 작성할 수 없습니다.");
+        }
+
+        return parent;
+    }
+
+    private void notifyReplyWriter(Comment parentComment, Long boardId, Long commentId, Long memberId, String writer) {
+        if (!parentComment.getMemberId().equals(memberId)) {
+            notificationService.notifyReply(parentComment.getMemberId(), boardId, commentId, writer);
         }
     }
 

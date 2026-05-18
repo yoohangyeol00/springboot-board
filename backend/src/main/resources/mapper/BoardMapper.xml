@@ -12,6 +12,7 @@
         <result property="content" column="content"/>
         <result property="writer" column="writer"/>
         <result property="viewCount" column="view_count"/>
+        <result property="commentCount" column="comment_count"/>
         <result property="createdAt" column="created_at"/>
         <result property="updatedAt" column="updated_at"/>
     </resultMap>
@@ -38,6 +39,12 @@
             b.content,
             COALESCE(m.nickname, b.writer) AS writer,
             b.view_count,
+            (
+                SELECT COUNT(*)
+                FROM comments c
+                WHERE c.board_id = b.id
+                  AND c.deleted_at IS NULL
+            ) AS comment_count,
             b.created_at,
             b.updated_at
         FROM boards b
@@ -105,6 +112,12 @@
             b.content,
             COALESCE(m.nickname, b.writer) AS writer,
             b.view_count,
+            (
+                SELECT COUNT(*)
+                FROM comments c
+                WHERE c.board_id = b.id
+                  AND c.deleted_at IS NULL
+            ) AS comment_count,
             b.created_at,
             b.updated_at
         FROM boards b
@@ -121,6 +134,12 @@
             b.content,
             COALESCE(m.nickname, b.writer) AS writer,
             b.view_count,
+            (
+                SELECT COUNT(*)
+                FROM comments c
+                WHERE c.board_id = b.id
+                  AND c.deleted_at IS NULL
+            ) AS comment_count,
             b.created_at,
             b.updated_at
         FROM boards b
@@ -136,6 +155,12 @@
             b.content,
             COALESCE(m.nickname, b.writer) AS writer,
             b.view_count,
+            (
+                SELECT COUNT(*)
+                FROM comments c
+                WHERE c.board_id = b.id
+                  AND c.deleted_at IS NULL
+            ) AS comment_count,
             b.created_at,
             b.updated_at
         FROM boards b

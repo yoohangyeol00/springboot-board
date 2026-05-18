@@ -5,6 +5,7 @@ export interface Board {
   content: string;
   writer: string;
   viewCount: number;
+  commentCount: number;
   createdAt: string;
   updatedAt: string;
   attachments: BoardAttachment[];

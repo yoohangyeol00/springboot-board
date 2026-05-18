@@ -17,7 +17,7 @@
         <result property="deletedAt" column="deleted_at"/>
     </resultMap>
 
-    <insert id="save">
+    <insert id="save" useGeneratedKeys="true" keyProperty="request.id" keyColumn="id">
         INSERT INTO comments (
             board_id,
             member_id,

@@ -70,7 +70,7 @@ export default function BoardList() {
     <tbody>
       {rows.length === 0 ? (
         <tr>
-          <td colSpan={5} className="empty-message">
+          <td colSpan={6} className="empty-message">
             {emptyMessage}
           </td>
         </tr>
@@ -80,6 +80,7 @@ export default function BoardList() {
             <td className="center">{showRank ? index + 1 : totalCount - (page - 1) * SIZE - index}</td>
             <td className="title-cell">{board.title}</td>
             <td className="center">{board.writer}</td>
+            <td className="center">{board.commentCount}</td>
             <td className="center">{board.viewCount}</td>
             <td className="center">{formatDate(board.createdAt)}</td>
           </tr>
@@ -101,6 +102,7 @@ export default function BoardList() {
               <th className="col-no">순위</th>
               <th className="col-title">제목</th>
               <th className="col-writer">작성자</th>
+              <th className="col-comments">댓글</th>
               <th className="col-views">조회수</th>
               <th className="col-date">작성일</th>
             </tr>
@@ -160,6 +162,7 @@ export default function BoardList() {
                   <th className="col-no">번호</th>
                   <th className="col-title">제목</th>
                   <th className="col-writer">작성자</th>
+                  <th className="col-comments">댓글</th>
                   <th className="col-views">조회수</th>
                   <th className="col-date">작성일</th>
                 </tr>
