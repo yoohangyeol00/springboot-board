@@ -14,6 +14,7 @@ import com.board.backend.comment.exception.CommentUpdateFailedException;
 import com.board.backend.comment.mapper.CommentMapper;
 import com.board.backend.notification.service.NotificationService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +23,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class CommentServiceImpl implements CommentService {
 
     private final CommentMapper commentMapper;
@@ -34,6 +36,7 @@ public class CommentServiceImpl implements CommentService {
         Board board = boardMapper.findById(boardId);
 
         if (board == null) {
+            log.warn("Board not found while creating comment boardId={}, memberId={}", boardId, memberId);
             throw new BoardNotFoundException();
         }
 
@@ -60,6 +63,7 @@ public class CommentServiceImpl implements CommentService {
     @Override
     public List<CommentResponse> getComments(Long boardId) {
         if (boardMapper.findById(boardId) == null) {
+            log.warn("Board not found while reading comments boardId={}", boardId);
             throw new BoardNotFoundException();
         }
 
@@ -105,10 +109,12 @@ public class CommentServiceImpl implements CommentService {
         Comment parent = commentMapper.findById(parentId);
 
         if (parent == null || parent.getDeletedAt() != null || !parent.getBoardId().equals(boardId)) {
+            log.warn("Invalid parent comment boardId={}, parentId={}", boardId, parentId);
             throw new CommentNotFoundException();
         }
 
         if (parent.getParentId() != null) {
+            log.warn("Nested reply creation rejected boardId={}, parentId={}", boardId, parentId);
             throw new IllegalArgumentException("대댓글에는 답글을 작성할 수 없습니다.");
         }
 
@@ -125,6 +131,7 @@ public class CommentServiceImpl implements CommentService {
         Comment comment = commentMapper.findById(id);
 
         if (comment == null) {
+            log.warn("Comment not found commentId={}", id);
             throw new CommentNotFoundException();
         }
 
@@ -133,18 +140,27 @@ public class CommentServiceImpl implements CommentService {
 
     private void validateCommentBelongsToBoard(Comment comment, Long boardId) {
         if (!comment.getBoardId().equals(boardId)) {
+            log.warn("Comment board mismatch boardId={}, commentId={}, actualBoardId={}",
+                    boardId,
+                    comment.getId(),
+                    comment.getBoardId());
             throw new CommentNotFoundException();
         }
     }
 
     private void validateOwner(Comment comment, Long memberId) {
         if (!comment.getMemberId().equals(memberId)) {
+            log.warn("Comment owner validation failed commentId={}, memberId={}, ownerId={}",
+                    comment.getId(),
+                    memberId,
+                    comment.getMemberId());
             throw new AccessDeniedException("본인이 작성한 댓글만 수정/삭제할 수 있습니다.");
         }
     }
 
     private void validateNotDeleted(Comment comment) {
         if (comment.getDeletedAt() != null) {
+            log.warn("Deleted comment access rejected commentId={}", comment.getId());
             throw new CommentNotFoundException();
         }
     }

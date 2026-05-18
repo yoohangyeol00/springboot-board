@@ -13,6 +13,7 @@ import com.board.backend.board.mapper.BoardMapper;
 import com.board.backend.global.common.PageResponse;
 import com.board.backend.image.service.ImageService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +22,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BoardServiceImpl implements BoardService {
 
     private final BoardMapper boardMapper;
@@ -70,6 +72,7 @@ public class BoardServiceImpl implements BoardService {
         Board board = boardMapper.findById(id);
 
         if (board == null) {
+            log.warn("Board not found boardId={}", id);
             throw new BoardNotFoundException();
         }
 
@@ -86,6 +89,7 @@ public class BoardServiceImpl implements BoardService {
         Board board = boardMapper.findById(id);
 
         if (board == null) {
+            log.warn("Board not found boardId={}", id);
             throw new BoardNotFoundException();
         }
 
@@ -106,6 +110,7 @@ public class BoardServiceImpl implements BoardService {
         Board board = boardMapper.findById(id);
 
         if (board == null) {
+            log.warn("Board not found boardId={}", id);
             throw new BoardNotFoundException();
         }
 
@@ -128,6 +133,7 @@ public class BoardServiceImpl implements BoardService {
         Board board = boardMapper.findById(id);
 
         if (board == null) {
+            log.warn("Board not found boardId={}", id);
             throw new BoardNotFoundException();
         }
 
@@ -136,6 +142,10 @@ public class BoardServiceImpl implements BoardService {
 
     private void validateOwner(Board board, Long memberId) {
         if (board.getMemberId() == null || !board.getMemberId().equals(memberId)) {
+            log.warn("Board owner validation failed boardId={}, memberId={}, ownerId={}",
+                    board.getId(),
+                    memberId,
+                    board.getMemberId());
             throw new AccessDeniedException("You can edit or delete only your own board.");
         }
     }

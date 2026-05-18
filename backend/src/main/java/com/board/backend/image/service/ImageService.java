@@ -80,7 +80,7 @@ public class ImageService {
             boolean deleted = Files.deleteIfExists(filePath);
             log.info("[ImageDelete] Result: {}", deleted ? "deleted" : "not found");
         } catch (IOException e) {
-            log.error("[ImageDelete] Failed to delete image: {}", filePath, e);
+            log.warn("[ImageDelete] Failed to delete image: {}", filePath, e);
         }
     }
 

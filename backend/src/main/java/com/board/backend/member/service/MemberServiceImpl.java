@@ -18,6 +18,7 @@ import com.board.backend.member.dto.RefreshTokenRequest;
 import com.board.backend.member.mapper.MemberMapper;
 import com.board.backend.member.mapper.RefreshTokenMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +27,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class MemberServiceImpl implements MemberService {
 
     private static final String ACTIVE_STATUS = "ACTIVE";
@@ -42,12 +44,14 @@ public class MemberServiceImpl implements MemberService {
         Member existingMember = memberMapper.findByLoginId(request.getLoginId());
 
         if (existingMember != null) {
+            log.warn("Signup rejected because loginId is duplicated");
             throw new IllegalArgumentException("이미 사용 중인 아이디입니다.");
         }
 
         Member existingNickname = memberMapper.findByNickname(request.getNickname());
 
         if (existingNickname != null) {
+            log.warn("Signup rejected because nickname is duplicated");
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
@@ -64,15 +68,18 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberMapper.findByLoginId(request.getLoginId());
 
         if (member == null) {
+            log.warn("Login rejected because member was not found");
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
 
         if (!ACTIVE_STATUS.equals(member.getStatus())) {
+            log.warn("Login rejected because member is inactive memberId={}, status={}", member.getId(), member.getStatus());
             throw new IllegalArgumentException("사용할 수 없는 계정입니다.");
         }
 
         if (!passwordEncoder.matches(request.getPassword(), member.getPasswordHash())) {
             memberMapper.increaseFailedLoginCount(member.getId());
+            log.warn("Login rejected because password does not match memberId={}", member.getId());
             throw new IllegalArgumentException("아이디 또는 비밀번호가 올바르지 않습니다.");
         }
 
@@ -92,6 +99,7 @@ public class MemberServiceImpl implements MemberService {
         RefreshToken savedToken = refreshTokenMapper.findValidByTokenHash(tokenHash, LocalDateTime.now());
 
         if (savedToken == null || !savedToken.getMemberId().equals(memberId)) {
+            log.warn("Refresh token rejected memberId={}", memberId);
             throw new IllegalArgumentException("Refresh token is invalid.");
         }
 
@@ -120,6 +128,7 @@ public class MemberServiceImpl implements MemberService {
         Member existingNickname = memberMapper.findByNickname(request.getNickname());
 
         if (existingNickname != null && !existingNickname.getId().equals(member.getId())) {
+            log.warn("Member update rejected because nickname is duplicated memberId={}", memberId);
             throw new IllegalArgumentException("이미 사용 중인 닉네임입니다.");
         }
 
@@ -135,6 +144,7 @@ public class MemberServiceImpl implements MemberService {
         Member member = getActiveMember(memberId);
 
         if (!passwordEncoder.matches(request.getCurrentPassword(), member.getPasswordHash())) {
+            log.warn("Password update rejected because current password does not match memberId={}", memberId);
             throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다.");
         }
 
@@ -152,6 +162,7 @@ public class MemberServiceImpl implements MemberService {
         Member member = getActiveMember(memberId);
 
         if (!passwordEncoder.matches(request.getPassword(), member.getPasswordHash())) {
+            log.warn("Member withdraw rejected because password does not match memberId={}", memberId);
             throw new IllegalArgumentException("비밀번호가 올바르지 않습니다.");
         }
 
@@ -192,6 +203,7 @@ public class MemberServiceImpl implements MemberService {
         Member member = memberMapper.findById(memberId);
 
         if (member == null || !ACTIVE_STATUS.equals(member.getStatus())) {
+            log.warn("Active member not found memberId={}", memberId);
             throw new IllegalArgumentException("회원 정보를 찾을 수 없습니다.");
         }
 

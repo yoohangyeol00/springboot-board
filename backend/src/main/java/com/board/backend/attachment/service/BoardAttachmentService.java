@@ -12,6 +12,7 @@ import com.board.backend.board.domain.Board;
 import com.board.backend.board.exception.BoardNotFoundException;
 import com.board.backend.board.mapper.BoardMapper;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.PathResource;
 import org.springframework.core.io.Resource;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,6 +27,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class BoardAttachmentService {
 
     private static final int MAX_ATTACHMENTS_PER_BOARD = 10;
@@ -136,6 +138,9 @@ public class BoardAttachmentService {
         PathResource resource = new PathResource(storageService.resolve(attachment.getStoredName()));
 
         if (!resource.exists() || !resource.isReadable()) {
+            log.warn("Attachment file resource not found attachmentId={}, storedName={}",
+                    attachment.getId(),
+                    attachment.getStoredName());
             throw new AttachmentNotFoundException();
         }
 
@@ -175,6 +180,7 @@ public class BoardAttachmentService {
         BoardAttachment attachment = attachmentMapper.findByIdAndBoardId(attachmentId, boardId);
 
         if (attachment == null) {
+            log.warn("Attachment not found boardId={}, attachmentId={}", boardId, attachmentId);
             throw new AttachmentNotFoundException();
         }
 
@@ -183,6 +189,7 @@ public class BoardAttachmentService {
 
     private void validateBoardExists(Long boardId) {
         if (boardMapper.findById(boardId) == null) {
+            log.warn("Board not found while validating attachment boardId={}", boardId);
             throw new BoardNotFoundException();
         }
     }
@@ -191,10 +198,15 @@ public class BoardAttachmentService {
         Board board = boardMapper.findById(boardId);
 
         if (board == null) {
+            log.warn("Board not found while validating attachment owner boardId={}, memberId={}", boardId, memberId);
             throw new BoardNotFoundException();
         }
 
         if (board.getMemberId() == null || !board.getMemberId().equals(memberId)) {
+            log.warn("Attachment owner validation failed boardId={}, memberId={}, ownerId={}",
+                    boardId,
+                    memberId,
+                    board.getMemberId());
             throw new AccessDeniedException("You do not have permission to manage attachments.");
         }
     }
@@ -203,12 +215,18 @@ public class BoardAttachmentService {
         int currentCount = attachmentMapper.countByBoardId(boardId);
 
         if (currentCount + newFileCount > MAX_ATTACHMENTS_PER_BOARD) {
+            log.warn("Attachment limit exceeded boardId={}, currentCount={}, newFileCount={}, maxCount={}",
+                    boardId,
+                    currentCount,
+                    newFileCount,
+                    MAX_ATTACHMENTS_PER_BOARD);
             throw new IllegalArgumentException("A board can have up to 10 attachments.");
         }
     }
 
     private void validateFiles(List<MultipartFile> files) {
         if (files == null || files.isEmpty()) {
+            log.warn("Attachment upload rejected because file list is empty");
             throw new IllegalArgumentException("Please select at least one file.");
         }
 
@@ -217,10 +235,14 @@ public class BoardAttachmentService {
 
     private void validateFile(MultipartFile file) {
         if (file == null || file.isEmpty()) {
+            log.warn("Attachment upload rejected because file is empty");
             throw new IllegalArgumentException("Empty files cannot be uploaded.");
         }
 
         if (file.getSize() > MAX_FILE_SIZE) {
+            log.warn("Attachment upload rejected because file is too large fileSize={}, maxFileSize={}",
+                    file.getSize(),
+                    MAX_FILE_SIZE);
             throw new IllegalArgumentException("Each attachment must be 10MB or smaller.");
         }
     }
